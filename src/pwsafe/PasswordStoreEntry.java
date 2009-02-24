@@ -40,7 +40,6 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
 
     private transient boolean _destroyed = false;
 
-    private int _entryID;
     private String _displayName;
     private String _userID;
     private char[] _password;
@@ -54,7 +53,6 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
      * The caller should discard their references to these arrays but leave their contents intact;
      * this PasswordStoreEntry object assumes responsibility for clearing and discarding the secret data.
      *
-     * @param entryID unique ID for this store entry - invariant across editing and re-saving
      * @param displayName name to appear in list of entries, typically a website address or company name,
      *         must not be null or empty
      * @param userID the account username / login name, can be null or empty
@@ -64,13 +62,11 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
      * @throws IllegalArgumentException if displayName is null or empty
      */
     public PasswordStoreEntry(
-            final int entryID,
             final String displayName,
             final String userID,
             final char[] password,
             final char[] additionalInfo) {
         checkDisplayName(displayName);
-        _entryID = entryID;
         _displayName = displayName;
         _userID = userID;
         _password = password;
@@ -87,15 +83,6 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
         if ("".equals(displayName)) {
             throw new IllegalArgumentException("displayName cannot be an empty string");
         }
-    }
-
-    /**
-     * Get the unique ID for this store entry
-     *
-     * @return the entry ID
-     */
-    public int getEntryID() {
-        return _entryID;
     }
 
     /**
@@ -222,10 +209,10 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
 
     /**
      * Check whether another object is a PasswordStoreEntry (not a subclass) and represents the same account as
-     * this object. Two objects are for the same account if they have the same entryID.
+     * this object. Two objects are for the same account if they have the same displayName and userID.
      *
      * @param o the object to compare to this object
-     * @return true if o is equal to this object (is a PasswordStoreEntry with the same entryID)
+     * @return true if o is equal to this object (is a PasswordStoreEntry with the same displayName and userID)
      */
     @Override
     public boolean equals(Object o) {
@@ -236,29 +223,43 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
             return false;
         }
         PasswordStoreEntry other = (PasswordStoreEntry) o;
-        return _entryID == other._entryID;
+        // _displayName never null
+        if (!_displayName.equals(other._displayName)) {
+            return false;
+        }
+        if (_userID == null) {
+            if (other._userID != null) {
+                return false;
+            }
+        } else if (!_userID.equals(other._userID)) {
+            return false;
+        }
+        return true;
     }
 
     /**
      * Generate a hash code for this object.
      *
-     * @return the hash code, which considers only the entryID field
+     * @return the hash code, which considers only the displayName and userID fields
      */
     @Override
     public int hashCode() {
         final int prime = 31;
         final int init = 4708;
         int hash = init;
-        hash = prime * hash + (int) _entryID;
+        // _displayName never null
+        hash = prime * hash + _displayName.hashCode();
+        hash = prime * hash + ((_userID == null) ? 0 : _userID.hashCode());
         return hash;
     }
 
     /**
      * Sort by _displayName then by _userID.
-     * <p>
-     * Note: this class has a natural ordering that is inconsistent with equals.
      */
     public int compareTo(PasswordStoreEntry other) {
+        if (other == null) {
+            throw new NullPointerException();
+        }
         if (this == other) {
             return 0;
         }
@@ -269,27 +270,21 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
         }
         // Same displayname - sort by userID; null entries considered greater
         String otherUserID = other._userID;
-        if (otherUserID != null) {
-            if (_userID != null) {
+        if (_userID == null) {
+            if (otherUserID != null) {
+                return 1;
+            }
+        } else {
+            if (otherUserID != null) {
                 compare = _userID.compareTo(otherUserID);
                 if (compare != 0) {
                     return compare;
                 }
             } else {
-                return 1;
-            }
-        } else {
-            if (_userID != null) {
                 return -1;
             }
         }
-        // Tiebreaker
-        if (_entryID < other._entryID) {
-            return -1;
-        }
-        if (_entryID > other._entryID) {
-            return 1;
-        }
+        // equals() would return true, must return 0 here
         return 0;
     }
 
@@ -339,7 +334,6 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
         out.writeByte(VERSION);
         /* For backward-compatible deserialization, change only the part below, and change VERSION value at top of file,
            and change readExternal to support both old and new */
-        out.writeInt(_entryID);
         out.writeObject(_displayName);
         out.writeObject(_userID);
         out.writeObject(_password);
@@ -364,7 +358,6 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
 
     private void readExternalVersion1(ObjectInput in) throws IOException, ClassNotFoundException {
         _destroyed = false;
-        _entryID = in.readInt();
         _displayName    = (String) in.readObject();
         _userID         = (String) in.readObject();
         _password       = (char[]) in.readObject();
