@@ -13,7 +13,7 @@
 
     <property name="project.package" value="pwsafe"/>
 
-    <property name="run.main-class" value="${project.package}.PWSafe"/>
+    <property name="run.main-class" value="${project.package}.Main"/>
 
     <!-- Values to go on javac commandline corresponding to 'javac.option.unchecked=on|off' -->
     <property name="javac.option.unchecked.off"
@@ -117,7 +117,7 @@
             -->
         </jar>
         <echo message="Jar file created: ${distdir}/${ant.project.name}.jar. To run it:"/>
-        <echo message="java -jar ${distdir}/${ant.project.name}.jar"/>
+        <echo message="java -jar ${distdir}/${ant.project.name}.jar [/path/to/specified-datastore-file]"/>
     </target>
 
     <target name="run" depends="compile"
@@ -127,6 +127,7 @@
               fork="true"
               failonerror="true"
               dir="${basedir}">
+            <!-- <arg file="/data/private/.pwsafe-datastore"/> -->
             <assertions refid="${java.assertions}"/>
         </java>
     </target>
