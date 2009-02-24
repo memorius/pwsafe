@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="pwsafe" default="dist">
+
+    <!-- Properties in these external files will override those in this file, but not those on the commandline -->
+    <property file="build.${user.name}.properties" />
+    <property file="build.properties" />
+
+    <!-- Properties in this file are used if not overridden above or on the commandline -->
+    <property name="srcdir" value="${basedir}/src"/>
+    <property name="builddir" value="${basedir}/build"/>
+    <property name="distdir" value="${basedir}/dist"/>
+    <property name="libdir" value="${basedir}/lib"/>
+
+    <property name="project.package" value="pwsafe"/>
+
+    <property name="run.main-class" value="${project.package}.PWSafe"/>
+
+    <!-- Values to go on javac commandline corresponding to 'javac.option.unchecked=on|off' -->
+    <property name="javac.option.unchecked.off"
+              id="javac.option.unchecked.off" value="-Xlint:-unchecked" />
+    <property name="javac.option.unchecked.on"
+              id="javac.option.unchecked.on" value="-Xlint:unchecked" />
+    <!-- Convert the javac.option.unchecked property (which is 'on' or 'off') to the required commandline option -->
+    <property name="javac.unchecked.compiler-arg"
+              refid="javac.option.unchecked.${javac.option.unchecked}" />
+
+
+    <fileset id="lib.jars" dir="${libdir}">
+        <include name="*.jar"/>
+    </fileset>
+
+    <path id="lib.classpath">
+        <fileset refid="lib.jars"/>
+    </path>
+
+    <path id="run.classpath">
+        <path refid="lib.classpath"/>
+        <pathelement location="${builddir}"/>
+    </path>
+
+    <!-- Reference this from <java> and <junit> tasks to enable assertions in this project's packages -->
+    <assertions id="assertions.project">
+        <enable package="${project.package}"/>
+    </assertions>
+
+    <!-- Reference this from <java> and <junit> tasks to disable assertions in this project's packages -->
+    <assertions id="assertions.none">
+        <disable package="${project.package}"/>
+    </assertions>
+
+    <target name="clean"
+            description="Delete build output (but not logs or database)">
+        <delete dir="${builddir}"/>
+        <delete dir="${distdir}"/>
+    </target>
+
+    <target name="compile" depends="-compile-init, -compile-copy-resources"
+            description="Build java classes into bin directory">
+        <javac srcdir="${srcdir}"
+             destdir="${builddir}"
+             classpathref="lib.classpath"
+             encoding="UTF-8"
+             verbose="${javac.option.verbose}"
+             debug="${javac.option.debug}"
+             deprecation="${javac.option.deprecation}"
+             optimize="${javac.option.optimize}"
+             source="1.5"
+             target="1.5">
+            <compilerarg value="${javac.unchecked.compiler-arg}"/>
+        </javac>
+    </target>
+
+    <target name="-compile-init">
+        <mkdir dir="${builddir}"/>
+    </target>
+
+    <!-- This pulls in any required config files from the source tree, other than the compile .java -->
+    <target name="-compile-copy-resources" depends="-compile-init">
+        <copy todir="${builddir}">
+            <fileset dir="${srcdir}">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="dist" depends="compile"
+            description="Build jar containing this project's classes and assemble with the lib jars">
+        <mkdir dir="${distdir}"/>
+        <!-- Copy the library jars so they are in the right place for our jar's relative classpath to find them -->
+        <mkdir dir="${distdir}/lib"/>
+        <copy todir="${distdir}/lib">
+            <fileset refid="lib.jars"/>
+        </copy>
+        <!-- Construct the libs classpath to go in our jar's manifest -->
+        <path id="distdir-jars">
+            <fileset dir="${distdir}/lib">
+                <include name="*.jar" />
+            </fileset>
+        </path>
+        <!-- Turn the paths into relative paths separated by spaces (as jar manifest spec requires) -->
+        <pathconvert property="jar.manifest-classpath" refid="distdir-jars" pathsep=" ">
+            <map from="${distdir}/" to="" />
+        </pathconvert>
+        <!-- Build jar containing our manifest and config files -->
+        <jar destfile="${distdir}/${ant.project.name}.jar">
+            <fileset dir="${builddir}"    includes="**/*"/>
+            <manifest>
+                    <attribute name="Main-Class" value="${run.main-class}"/>
+                    <attribute name="Class-Path" value="${jar.manifest-classpath}" />
+            </manifest>
+            <!-- We COULD include libraries in the same jar like this, but some of them (e.g. bouncycastle)
+                 are already nicely indexed and signed, so I won't for now
+            <fileset dir="${libdir}"
+                     includes="**/*"
+                     excludes="*.jar"/>
+            <zipgroupfileset dir="${libdir}" includes="*.jar"/>
+            -->
+        </jar>
+        <echo message="Jar file created: ${distdir}/${ant.project.name}.jar. To run it:"/>
+        <echo message="java -jar ${distdir}/${ant.project.name}.jar"/>
+    </target>
+
+    <target name="run" depends="compile"
+            description="Build and run directly from the bin directory">
+        <java classname="${run.main-class}"
+              classpathref="run.classpath"
+              fork="true"
+              failonerror="true"
+              dir="${basedir}">
+            <assertions refid="${java.assertions}"/>
+        </java>
+    </target>
+</project>

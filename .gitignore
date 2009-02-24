@@ -1,0 +1,8 @@
+# File patterns for git to ignore:
+
+*.class
+/build/
+/dist/
+
+# User properties overrides
+/build.*.properties
