@@ -2,6 +2,12 @@ package pwsafe;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import pwsafe.store.PasswordStoreList;
+import pwsafe.util.IOUtils;
+import pwsafe.util.SerializationUtils;
 
 /**
  * Main lifecycle class - an instance of this encapsulates the password datastore file and dialogs etc
@@ -10,7 +16,15 @@ import java.io.IOException;
  */
 public class PWSafe {
 
+    /* TODO:
+         - timeout thread, discard password data after some interval, prompt if needed again
+    */
+
+    private static final String INITIAL_STORE_NAME = "default";
+
+
     private final File _datastoreFile;
+    private PasswordStoreList _passwordStores;
 
     /**
      * Construct a PWSafe
@@ -23,8 +37,55 @@ public class PWSafe {
         try {
             checkDatastoreFileAccessAndCreate();
         } catch (DatastoreFileException e) {
-            throw new InitializationException(String.format("Invalid datastore file path '%s'", datastoreFile), e);
+            throw new InitializationException(String.format("Invalid datastore file path '%s'", _datastoreFile), e);
         }
+        try {
+            load();
+        } catch (DatastoreFileException e) {
+            throw new InitializationException(String.format("Failed to load datastore file '%s'", _datastoreFile), e);
+        }
+    }
+
+    public void load() throws DatastoreFileException {
+        if (_datastoreFile.length() > 0) {
+            byte[] serialized;
+            try {
+                serialized = IOUtils.readFile(_datastoreFile);
+            } catch (IOException e) {
+                throw new DatastoreFileException(String.format("Failed to read datastore file '%s'", _datastoreFile), e);
+            }
+            try {
+                _passwordStores = SerializationUtils.deserialize(serialized, PasswordStoreList.class);
+            } catch (SerializationUtils.SerializationException e) {
+                throw new DatastoreFileException("Failed to deserialize datastores", e);
+            }
+        } else {
+            _passwordStores = new PasswordStoreList();
+            _passwordStores.addStore(INITIAL_STORE_NAME);
+        }
+    }
+
+    public void save() throws DatastoreFileException {
+        byte[] serialized;
+        try {
+            serialized = SerializationUtils.serialize(_passwordStores);
+        } catch (SerializationUtils.SerializationException e) {
+            throw new DatastoreFileException("Failed to serialize datastore", e);
+        }
+        try {
+            IOUtils.writeFile(_datastoreFile, serialized);
+        } catch (IOException e) {
+            throw new DatastoreFileException(String.format("Failed to write datastore file '%s'", _datastoreFile), e);
+        }
+    }
+
+    /**
+     * Get the current stores.
+     *
+     * @return the password stores
+     */
+    public PasswordStoreList getStoreList() {
+        return _passwordStores;
     }
 
     /**
@@ -57,6 +118,27 @@ public class PWSafe {
     }
 
     public void showDialog() {
+        // TODO: run a Swing dialog then destroy store
         System.out.println(_datastoreFile);
+        String password = "mypassword";
+
+        // Unlock existing
+        ///*
+        try {
+            getStoreList().getStores().get(0).unlock(new EncryptionKey(password.toCharArray()));
+        } catch (DecryptionException e) {
+            throw new RuntimeException("Unlock failed", e);
+        }
+        //*/
+
+        // Lock new and save
+        /*
+        getStoreList().getStores().get(0).setKey(new EncryptionKey(password.toCharArray()));
+        try {
+            save();
+        } catch (DatastoreFileException e) {
+            throw new RuntimeException("Save failed", e);
+        }
+        */
     }
 }

@@ -1,11 +1,10 @@
-package pwsafe;
+package pwsafe.store;
 
-import java.io.Externalizable;
 import java.io.InvalidClassException;
 import java.io.IOException;
-import java.io.NotSerializableException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -15,14 +14,14 @@ import java.util.Arrays;
  *
  * @author Nick Clarke
  */
-public final class PasswordStoreEntry implements Externalizable, Comparable<PasswordStoreEntry> {
+public final class PasswordStoreEntry implements Serializable, Comparable<PasswordStoreEntry> {
     /**
      * serialVersionUID for this class.
      * <p>
      * For backward-compatibility, do NOT change this when changing serialization implementation:
      * change VERSION field instead.
      *
-     * @see #writeExternal(ObjectOutput)
+     * @see #writeObject(ObjectOutputStream)
      */
     private static final long serialVersionUID = 4653207431849795142L;
 
@@ -30,10 +29,10 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
      * Allows backward-compatible deserialization for this class.
      * <p>
      * For backward-compatibility, increment this when changing serialization implementation,
-     * and update readExternal to handle the new and old versions.
+     * and update readObject to handle the new and old versions.
      *
-     * @see #writeExternal(ObjectOutput)
-     * @see #readExternal(ObjectInput)
+     * @see #writeObject(ObjectOutputStream)
+     * @see #readObject(ObjectInputStream)
      */
     private static final byte VERSION = 0x1;
 
@@ -61,7 +60,7 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
      *         e.g. additional security questions, can be null or empty
      * @throws IllegalArgumentException if displayName is null or empty
      */
-    public PasswordStoreEntry(
+    protected PasswordStoreEntry(
             final String displayName,
             final String userID,
             final char[] password,
@@ -71,6 +70,15 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
         _userID = userID;
         _password = password;
         _additionalInfo = additionalInfo;
+    }
+
+    /**
+     * @throws IllegalStateException if {@link #destroySecrets()} has already been called
+     */
+    private void checkNotDestroyed() {
+        if (_destroyed) {
+            throw new IllegalStateException("destroySecrets() has already been called");
+        }
     }
 
     /**
@@ -138,12 +146,10 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
      * and discarding the secret data, and caller should not zero it.
      *
      * @return the password (plaintext), can be null or empty.
-     * @throws IllegalStateException if {@link #destroy()} method has been called
+     * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
     public char[] getPassword() {
-        if (_destroyed) {
-            throw new IllegalStateException("destroy() has already been called");
-        }
+        checkNotDestroyed();
         return _password;
     }
 
@@ -156,12 +162,10 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
      * this PasswordStoreEntry object assumes responsibility for clearing and discarding the secret data.
      *
      * @param password the new password (plaintext), can be null or empty
-     * @throws IllegalStateException if {@link #destroy()} method has been called
+     * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
     public void setPassword(char[] password) {
-        if (_destroyed) {
-            throw new IllegalStateException("destroy() has already been called");
-        }
+        checkNotDestroyed();
         clearPassword();
         _password = password;
     }
@@ -179,12 +183,10 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
      * and discarding the secret data, and caller should not zero it.
      *
      * @return the additional login info (plaintext), can be null or empty.
-     * @throws IllegalStateException if {@link #destroy()} method has been called
+     * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
     public char[] getAdditionalInfo() {
-        if (_destroyed) {
-            throw new IllegalStateException("destroy() has already been called");
-        }
+        checkNotDestroyed();
         return _additionalInfo;
     }
 
@@ -197,12 +199,10 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
      * this PasswordStoreEntry object assumes responsibility for clearing and discarding the secret data.
      *
      * @param additionalInfo the new additional login info (plaintext), can be null or empty
-     * @throws IllegalStateException if {@link #destroy()} method has been called
+     * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
     public void setAdditionalInfo(char[] additionalInfo) {
-        if (_destroyed) {
-            throw new IllegalStateException("destroy() has already been called");
-        }
+        checkNotDestroyed();
         clearAdditionalInfo();
         _additionalInfo = additionalInfo;
     }
@@ -309,31 +309,19 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
     }
 
     /**
-     * Zero-overwrite and discard the secret password and additional-info fields, if any.
-     * This method can safely be called repeatedly.
-     * Once called, getPassword / getAdditionalInfo methods are no longer available.
-     */
-    public void destroy() {
-        clearPassword();
-        clearAdditionalInfo();
-        _destroyed = true;
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        destroy();
-    }
-
-    /**
      * Explicit serialization to guarantee we can handle old versions if implementation evolves
      */
-    public void writeExternal(ObjectOutput out) throws IOException {
-        if (_destroyed) {
-            throw new NotSerializableException(getClass().getName() + " : destroy() has already been called");
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        try {
+            checkNotDestroyed();
+        } catch (IllegalStateException e) {
+            IOException ioe = new IOException("Nothing to serialize");
+            ioe.initCause(e);
+            throw ioe;
         }
         out.writeByte(VERSION);
         /* For backward-compatible deserialization, change only the part below, and change VERSION value at top of file,
-           and change readExternal to support both old and new */
+           and change readObject to support both old and new */
         out.writeObject(_displayName);
         out.writeObject(_userID);
         out.writeObject(_password);
@@ -343,24 +331,41 @@ public final class PasswordStoreEntry implements Externalizable, Comparable<Pass
     /**
      * Explicit deserialization to guarantee we can handle old versions if implementation evolves
      */
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         byte version = in.readByte();
-        // Add new versions here when changing writeExternal / VERSION field
+        // Add new versions here when changing writeObject / VERSION field
         switch (version) {
             case 0x1:
-                readExternalVersion1(in);
+                readObjectVersion1(in);
                 break;
             default:
                 throw new InvalidClassException(getClass().getName(),
-                        "The VERSION '" + version + "' was read from the stream but is not supported by the readExternal implementation");
+                        "The VERSION '" + version + "' was read from the stream "
+                        + "but is not supported by the PasswordStoreEntry.readObject implementation");
         }
     }
 
-    private void readExternalVersion1(ObjectInput in) throws IOException, ClassNotFoundException {
+    private void readObjectVersion1(ObjectInputStream in) throws IOException, ClassNotFoundException {
         _destroyed = false;
         _displayName    = (String) in.readObject();
         _userID         = (String) in.readObject();
         _password       = (char[]) in.readObject();
         _additionalInfo = (char[]) in.readObject();
+    }
+
+    /**
+     * Zero-overwrite and discard the secret password and additional-info fields, if any.
+     * This method can safely be called repeatedly.
+     * Once called, getPassword / getAdditionalInfo methods are no longer available.
+     */
+    public void destroySecrets() {
+        clearPassword();
+        clearAdditionalInfo();
+        _destroyed = true;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        destroySecrets();
     }
 }
