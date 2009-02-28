@@ -24,6 +24,7 @@ public class Main {
         PWSafe safe = new PWSafe(getDatastoreFile(args));
         // TODO: maybe allow a commandline mode here
         safe.showDialog();
+        // Return and leave the dialog (AWT thread) as the only thing running - we exit when it is disposed
     }
 
 

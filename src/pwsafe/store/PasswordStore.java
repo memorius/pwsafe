@@ -285,6 +285,16 @@ public final class PasswordStore implements Serializable, Comparable<PasswordSto
     }
 
     /**
+     * Get String to display in the list in {@link pwsafe.gui.MainDialog}
+     *
+     * @return the result of {@link #getStoreName()}
+     */
+    @Override
+    public String toString() {
+        return getStoreName();
+    }
+
+    /**
      * Zero-overwrite and discard the contained password store entries.
      * This method can safely be called repeatedly.
      * Once called, entries are no longer available and {@link #unlock(EncryptionKey)} must be called.

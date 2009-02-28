@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import pwsafe.gui.MainWindow;
 import pwsafe.store.PasswordStoreList;
 import pwsafe.util.IOUtils;
 import pwsafe.util.SerializationUtils;
@@ -34,6 +35,7 @@ public class PWSafe {
             throw new IllegalArgumentException("datastoreFile must not be null");
         }
         _datastoreFile = datastoreFile;
+        System.out.println("Password Safe datastore file: " + _datastoreFile);
         try {
             checkDatastoreFileAccessAndCreate();
         } catch (DatastoreFileException e) {
@@ -80,15 +82,6 @@ public class PWSafe {
     }
 
     /**
-     * Get the current stores.
-     *
-     * @return the password stores
-     */
-    public PasswordStoreList getStoreList() {
-        return _passwordStores;
-    }
-
-    /**
      * Check datastore file is readable, writable, not a directory. It need not actually exist yet.
      *
      * @throws DatastoreFileException if invalid
@@ -119,21 +112,24 @@ public class PWSafe {
 
     public void showDialog() {
         // TODO: run a Swing dialog then destroy store
-        System.out.println(_datastoreFile);
-        String password = "mypassword";
+        MainWindow window = new MainWindow(this, _passwordStores);
+        window.setVisible(true);
+        // Return and leave the dialog (AWT thread) as the only thing running - we exit when it is disposed
+
+        //String password = "mypassword";
 
         // Unlock existing
-        ///*
+        /*
         try {
-            getStoreList().getStores().get(0).unlock(new EncryptionKey(password.toCharArray()));
+            _passwordStores.getStores().get(0).unlock(new EncryptionKey(password.toCharArray()));
         } catch (DecryptionException e) {
             throw new RuntimeException("Unlock failed", e);
         }
-        //*/
+        */
 
         // Lock new and save
         /*
-        getStoreList().getStores().get(0).setKey(new EncryptionKey(password.toCharArray()));
+        _passwordStores.getStores().get(0).setKey(new EncryptionKey(password.toCharArray()));
         try {
             save();
         } catch (DatastoreFileException e) {

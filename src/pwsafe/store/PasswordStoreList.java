@@ -127,4 +127,20 @@ public class PasswordStoreList implements Serializable {
             _stores.add((PasswordStore) in.readObject());
         }
     }
+
+    /**
+     * Zero-overwrite and discard the contained password store entries.
+     * This method can safely be called repeatedly.
+     * Once called, stores will all be locked, but can be unlocked again given the right key.
+     */
+    public void destroySecrets() {
+        for (PasswordStore store : _stores) {
+            store.destroySecrets();
+        }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        destroySecrets();
+    }
 }
