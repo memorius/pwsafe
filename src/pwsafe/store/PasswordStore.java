@@ -142,7 +142,8 @@ public final class PasswordStore implements Serializable, Comparable<PasswordSto
 
     /**
      * Decrypt the data and unlock the store.
-     * This will keep a reference to the key for use when locking again.
+     * <p>
+     * If successful, this will keep a reference to the key for use when locking again.
      *
      * @throws IllegalStateException if store has already been unlocked
      * @throws DecryptionException if decryption fails (e.g. due to incorrect key)
@@ -291,7 +292,11 @@ public final class PasswordStore implements Serializable, Comparable<PasswordSto
      */
     @Override
     public String toString() {
-        return getStoreName();
+        return getStoreName()
+                + " "
+                + (isLocked() ? "(locked)"
+                              : (_key == null ? "(new, need to set password)"
+                                              : "(unlocked)"));
     }
 
     /**
