@@ -105,6 +105,15 @@ public final class PasswordStore implements Serializable, Comparable<PasswordSto
     }
 
     /**
+     * Does the store have an encryption key in memory?
+     *
+     * @return true if the store has an encryption key, false otherwise (locked, or newly-created store)
+     */
+    public boolean hasKey() {
+        return _key != null;
+    }
+
+    /**
      * Check the store is currently unlocked.
      *
      * @throws IllegalStateException if store has not been successfully unlocked

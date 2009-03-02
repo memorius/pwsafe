@@ -210,7 +210,9 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
     public void dispose() {
         // This appears to be the best we can to to clear any password still stored internally
         _passwordField1.setText(null);
-        _passwordField2.setText(null);
-        _passwordField3.setText(null);
+        if (_multipleEntry) {
+            _passwordField2.setText(null);
+            _passwordField3.setText(null);
+        }
     }
 }
