@@ -5,6 +5,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -33,6 +36,8 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
 
     private static final String BUTTON_OK = "ok";
     private static final String BUTTON_CANCEL = "cancel";
+
+    private static final int PASSWORD_FIELD_COLUMNS = 30;
 
     private boolean _ok = false;
     private boolean _multipleEntry;
@@ -80,32 +85,57 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
     }
 
     private Component createPasswordFieldsPanel() {
-        Box box1 = Box.createHorizontalBox();
-        box1.add(new JLabel("Password:"));
-        _passwordField1 = new JPasswordField();
-        box1.add(_passwordField1);
+        GridBagLayout gridbag = new GridBagLayout();
+        JPanel panel = new JPanel(gridbag);
+        GridBagConstraints c = new GridBagConstraints();
 
-        Box box;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+
+        c.gridx = 0;
+        c.gridy = 0;
+        c.weightx = 0.0;
+        c.fill = GridBagConstraints.NONE;
+        JLabel label = new JLabel("Password:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+
         if (_multipleEntry) {
-            Box box2 = Box.createHorizontalBox();
-            box2.add(new JLabel("Re-enter password:"));
-            _passwordField2 = new JPasswordField();
-            box2.add(_passwordField2);
+            c.gridy++;
+            label = new JLabel("Re-enter password:");
+            gridbag.setConstraints(label, c);
+            panel.add(label);
 
-            Box box3 = Box.createHorizontalBox();
-            box3.add(new JLabel("Re-enter again:"));
-            _passwordField3 = new JPasswordField();
-            box3.add(_passwordField3);
+            c.gridy++;
+            label = new JLabel("Re-enter again:");
+            gridbag.setConstraints(label, c);
+            panel.add(label);
 
-            box = Box.createVerticalBox();
-            box.add(box1);
-            box.add(box2);
-            box.add(box3);
-        } else {
-            box = box1;
+            c.gridy = 0;
         }
-        box.setBorder(BorderFactory.createLineBorder(Color.black));
-        return box;
+
+        c.gridx++;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
+        c.insets = new Insets(0, 2, 0, 2);
+        _passwordField1 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
+        gridbag.setConstraints(_passwordField1, c);
+        panel.add(_passwordField1);
+
+        if (_multipleEntry) {
+            c.gridy++;
+            _passwordField2 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
+            gridbag.setConstraints(_passwordField2, c);
+            panel.add(_passwordField2);
+
+            c.gridy++;
+            _passwordField3 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
+            gridbag.setConstraints(_passwordField3, c);
+            panel.add(_passwordField3);
+        }
+
+        panel.setBorder(BorderFactory.createLineBorder(Color.black));
+        return panel;
     }
 
     private Component createButtonsPanel() {
@@ -121,8 +151,8 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
         for (JButton b : new JButton[] {_okButton, _cancelButton}) {
-            // b.setAlignmentX(Component.CENTER_ALIGNMENT);
-            // b.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
+            b.setAlignmentX(Component.CENTER_ALIGNMENT);
+            b.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
             b.addActionListener(this);
             box.add(b);
         }
