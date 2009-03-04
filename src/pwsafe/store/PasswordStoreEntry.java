@@ -289,6 +289,16 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     }
 
     /**
+     * Get String to display in the list in {@link pwsafe.gui.MainWindow}
+     *
+     * @return the result of {@link #getDisplayName()}
+     */
+    @Override
+    public String toString() {
+        return getDisplayName();
+    }
+
+    /**
      * Zero-overwrite and discard the secret password field, if any.
      */
     private void clearPassword() {

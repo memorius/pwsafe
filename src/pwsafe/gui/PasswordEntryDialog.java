@@ -25,7 +25,7 @@ import javax.swing.JPasswordField;
 import javax.swing.WindowConstants;
 
 /**
- * Modal dialog prompting for a password, with optional double-confirm
+ * Modal dialog prompting for a password, with optional multiple-confirm
  *
  * @author Nick Clarke
  */
@@ -156,7 +156,6 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
             b.addActionListener(this);
             box.add(b);
         }
-
         return box;
     }
 

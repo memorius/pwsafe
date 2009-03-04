@@ -295,7 +295,7 @@ public final class PasswordStore implements Serializable, Comparable<PasswordSto
     }
 
     /**
-     * Get String to display in the list in {@link pwsafe.gui.MainDialog}
+     * Get String to display in the list in {@link pwsafe.gui.MainWindow}
      *
      * @return the result of {@link #getStoreName()}
      */
