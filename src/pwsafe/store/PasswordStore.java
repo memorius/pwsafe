@@ -304,7 +304,7 @@ public final class PasswordStore implements Serializable, Comparable<PasswordSto
         return getStoreName()
                 + " "
                 + (isLocked() ? "(locked)"
-                              : (_key == null ? "(new, need to set password)"
+                              : (_key == null ? "(needs new password)"
                                               : "(unlocked)"));
     }
 

@@ -46,6 +46,10 @@ public class PasswordStoreList implements Serializable {
         _stores = new ArrayList<PasswordStore>();
     }
 
+    public boolean isEmpty() {
+        return _stores.isEmpty();
+    }
+
     /**
      * Get the current list of stores
      *

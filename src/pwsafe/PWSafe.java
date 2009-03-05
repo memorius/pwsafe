@@ -21,9 +21,6 @@ public class PWSafe {
          - timeout thread, discard password data after some interval, prompt if needed again
     */
 
-    private static final String INITIAL_STORE_NAME = "default";
-
-
     private final File _datastoreFile;
     private PasswordStoreList _passwordStores;
 
@@ -63,7 +60,6 @@ public class PWSafe {
             }
         } else {
             _passwordStores = new PasswordStoreList();
-            _passwordStores.addStore(INITIAL_STORE_NAME);
         }
     }
 

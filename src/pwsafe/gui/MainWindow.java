@@ -49,18 +49,20 @@ public class MainWindow extends JFrame implements ActionListener {
 
 // User-visible text
     private static final String TITLE = "Password Safe";
+    private static final String DEFAULT_NEW_ENTRY_NAME = "New entry";
+    private static final String DEFAULT_NEW_STORE_NAME = "New store";
     // Store list
     private static final String UNLOCK_STORE_BUTTON_TEXT = "Unlock";
     private static final String CHANGE_STORE_PASSWORD_BUTTON_TEXT = "Change password";
     private static final String SET_STORE_PASSWORD_BUTTON_TEXT = "Set password";
     private static final String RENAME_STORE_BUTTON_TEXT = "Rename";
     private static final String LOCK_STORE_BUTTON_TEXT = "Lock";
-    private static final String ADD_STORE_BUTTON_TEXT = "Add new store";
+    private static final String ADD_STORE_BUTTON_TEXT = "Add store";
     private static final String REMOVE_STORE_BUTTON_TEXT = "Delete store";
     // Entry list
     private static final String VIEW_ENTRY_BUTTON_TEXT = "View entry";
     private static final String ADD_ENTRY_BUTTON_TEXT = "Add entry";
-    private static final String REMOVE_ENTRY_BUTTON_TEXT = "Remove entry";
+    private static final String REMOVE_ENTRY_BUTTON_TEXT = "Delete entry";
     private static final String SAVE_ENTRY_BUTTON_TEXT = "Save entry";
     private static final String DISCARD_ENTRY_BUTTON_TEXT = "Discard edited entry";
 
@@ -118,6 +120,11 @@ public class MainWindow extends JFrame implements ActionListener {
         }
         _pwsafe = pwsafe;
         _passwordStoreList = passwordStoreList;
+        // Create an empty initial store at first startup
+        if (_passwordStoreList.isEmpty()) {
+            _passwordStoreList.addStore(DEFAULT_NEW_STORE_NAME);
+        }
+        // Create and populate dialog controls
         setup();
     }
 
@@ -249,7 +256,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
         _viewEntryButton   = makeButton(box, VIEW_ENTRY_BUTTON_TEXT,   KeyEvent.VK_V, ButtonAction.VIEW_ENTRY);
         _addEntryButton    = makeButton(box, ADD_ENTRY_BUTTON_TEXT,    KeyEvent.VK_A, ButtonAction.ADD_ENTRY);
-        _removeEntryButton = makeButton(box, REMOVE_ENTRY_BUTTON_TEXT, KeyEvent.VK_R, ButtonAction.REMOVE_ENTRY);
+        _removeEntryButton = makeButton(box, REMOVE_ENTRY_BUTTON_TEXT, KeyEvent.VK_D, ButtonAction.REMOVE_ENTRY);
 
         return box;
     }
@@ -308,11 +315,11 @@ public class MainWindow extends JFrame implements ActionListener {
 
         _unlockStoreButton = makeButton(box, UNLOCK_STORE_BUTTON_TEXT, KeyEvent.VK_U,        ButtonAction.UNLOCK_STORE);
         _changeStorePasswordButton =
-                             makeButton(box, CHANGE_STORE_PASSWORD_BUTTON_TEXT, -1 /*KeyEvent.VK_C*/, ButtonAction.CHANGE_STORE_PASSWORD);
-        _renameStoreButton = makeButton(box, RENAME_STORE_BUTTON_TEXT, -1 /*KeyEvent.VK_N*/, ButtonAction.RENAME_STORE);
+                             makeButton(box, CHANGE_STORE_PASSWORD_BUTTON_TEXT, KeyEvent.VK_P, ButtonAction.CHANGE_STORE_PASSWORD);
+        _renameStoreButton = makeButton(box, RENAME_STORE_BUTTON_TEXT, KeyEvent.VK_R,        ButtonAction.RENAME_STORE);
         _lockStoreButton   = makeButton(box, LOCK_STORE_BUTTON_TEXT,   KeyEvent.VK_L,        ButtonAction.LOCK_STORE);
-        _addStoreButton    = makeButton(box, ADD_STORE_BUTTON_TEXT,    -1 /*KeyEvent.VK_A*/, ButtonAction.ADD_STORE);
-        _removeStoreButton = makeButton(box, REMOVE_STORE_BUTTON_TEXT, -1 /*KeyEvent.VK_R*/, ButtonAction.REMOVE_STORE);
+        _addStoreButton    = makeButton(box, ADD_STORE_BUTTON_TEXT,    -1,                   ButtonAction.ADD_STORE);
+        _removeStoreButton = makeButton(box, REMOVE_STORE_BUTTON_TEXT, -1,                   ButtonAction.REMOVE_STORE);
 
         return box;
     }
@@ -429,25 +436,17 @@ public class MainWindow extends JFrame implements ActionListener {
     }
 
     private void addNewStore() {
-        String storeName = JOptionPane.showInputDialog(this,
-                "Enter name for new password store:", "Create new password store", JOptionPane.QUESTION_MESSAGE);
-        if (storeName != null && !"".equals(storeName)) {
-            PasswordStore newStore = _passwordStoreList.addStore(storeName);
-            reloadPasswordStoreList(newStore);
-            reloadPasswordStoreEntryList(null);
-        }
+        PasswordStore newStore = _passwordStoreList.addStore(DEFAULT_NEW_STORE_NAME);
+        reloadPasswordStoreList(newStore);
+        reloadPasswordStoreEntryList(null);
     }
 
     private void addNewEntry() {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         assert (store != null && !store.isLocked());
-        String entryName = JOptionPane.showInputDialog(this,
-                "Enter name for new password account entry:", "Create new password account entry", JOptionPane.QUESTION_MESSAGE);
-        if (entryName != null && !"".equals(entryName)) {
-            PasswordStoreEntry newEntry = store.getEntryList().addEntry(entryName);
-            reloadPasswordStoreEntryList(newEntry);
-            viewSelectedEntry();
-        }
+        PasswordStoreEntry newEntry = store.getEntryList().addEntry(DEFAULT_NEW_ENTRY_NAME);
+        reloadPasswordStoreEntryList(newEntry);
+        viewSelectedEntry();
     }
 
     /**

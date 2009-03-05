@@ -56,6 +56,10 @@ public final class PasswordStoreEntryList implements Serializable {
         }
     }
 
+    public boolean isEmpty() {
+        return _entries.isEmpty();
+    }
+
     /**
      * Get the current list of entries
      *
