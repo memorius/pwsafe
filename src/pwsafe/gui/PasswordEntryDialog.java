@@ -37,7 +37,7 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
     private static final String BUTTON_OK = "ok";
     private static final String BUTTON_CANCEL = "cancel";
 
-    private static final int PASSWORD_FIELD_COLUMNS = 30;
+    private static final int PASSWORD_FIELD_COLUMNS = 20;
 
     private boolean _ok = false;
     private boolean _multipleEntry;
@@ -89,13 +89,12 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
         JPanel panel = new JPanel(gridbag);
         GridBagConstraints c = new GridBagConstraints();
 
-        c.weightx = 1.0;
+        c.weightx = 0.0;
         c.weighty = 1.0;
-
+        c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
-        c.weightx = 0.0;
-        c.fill = GridBagConstraints.NONE;
+
         JLabel label = new JLabel("Password:");
         gridbag.setConstraints(label, c);
         panel.add(label);

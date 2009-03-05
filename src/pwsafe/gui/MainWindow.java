@@ -26,7 +26,10 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -60,11 +63,16 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String ADD_STORE_BUTTON_TEXT = "Add store";
     private static final String REMOVE_STORE_BUTTON_TEXT = "Delete store";
     // Entry list
-    private static final String VIEW_ENTRY_BUTTON_TEXT = "View entry";
+    private static final String VIEW_ENTRY_BUTTON_TEXT = "Open entry";
     private static final String ADD_ENTRY_BUTTON_TEXT = "Add entry";
     private static final String REMOVE_ENTRY_BUTTON_TEXT = "Delete entry";
     private static final String SAVE_ENTRY_BUTTON_TEXT = "Save entry";
     private static final String DISCARD_ENTRY_BUTTON_TEXT = "Discard edited entry";
+    // Entry editing
+    private static final String SHOW_ENTRY_PASSWORD_BUTTON_TEXT = "Show";
+    private static final String HIDE_ENTRY_PASSWORD_BUTTON_TEXT = "Hide";
+
+    private static final int PASSWORD_FIELD_COLUMNS = 10;
 
 // Action commands
     private static enum ButtonAction {
@@ -80,7 +88,9 @@ public class MainWindow extends JFrame implements ActionListener {
         ADD_ENTRY,
         REMOVE_ENTRY,
         SAVE_ENTRY,
-        DISCARD_ENTRY
+        DISCARD_ENTRY,
+        SHOW_ENTRY_PASSWORD,
+        HIDE_ENTRY_PASSWORD
     }
 
 // Underlying data store
@@ -103,6 +113,12 @@ public class MainWindow extends JFrame implements ActionListener {
     private JButton _removeEntryButton;
 
 // Entry editing
+    private JTextField _entryNameField;
+    private JTextField _entryUserIDField;
+    private JPasswordField _entryPasswordField;
+    private JTextArea _entryAdditionalInfoField;
+    private JButton _showEntryPasswordButton;
+    private JButton _hideEntryPasswordButton;
     private JButton _saveEntryButton;
     private JButton _discardEntryButton;
 
@@ -166,6 +182,7 @@ public class MainWindow extends JFrame implements ActionListener {
         panel.setBorder(BorderFactory.createLineBorder(Color.black));
         panel.add(createPasswordStoreEntryEditFields(), BorderLayout.CENTER);
         panel.add(createPasswordStoreEntrySaveButtons(), BorderLayout.SOUTH);
+        setPasswordStoreEntryEditFieldsEnabled(false);
         return panel;
     }
 
@@ -174,21 +191,107 @@ public class MainWindow extends JFrame implements ActionListener {
         JPanel panel = new JPanel(gridbag);
         GridBagConstraints c = new GridBagConstraints();
 
-        c.weightx = 1.0;
+        c.weightx = 0.0;
         c.weighty = 1.0;
-
+        c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
-        c.weightx = 0.0;
-        c.fill = GridBagConstraints.NONE;
 
-        // TODO
-        JLabel label = new JLabel("Some text fields here");
+        JLabel label = new JLabel("Name:");
         gridbag.setConstraints(label, c);
         panel.add(label);
 
+        c.gridy++;
+        label = new JLabel("User ID:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+
+        c.gridy++;
+        c.gridheight = 2;
+        label = new JLabel("Password:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridheight = 1;
+
+        c.gridy += 2;
+        label = new JLabel("Additional info:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+
+        c.gridy = 0;
+        c.gridx++;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
+        c.insets = new Insets(0, 2, 0, 2);
+
+        _entryNameField = new JTextField();
+        gridbag.setConstraints(_entryNameField, c);
+        panel.add(_entryNameField);
+
+        c.gridy++;
+        _entryUserIDField = new JTextField();
+        gridbag.setConstraints(_entryUserIDField, c);
+        panel.add(_entryUserIDField);
+
+        c.gridy++;
+        /* TODO: make this always disabled, have 'Set password', 'Copy password' buttons next to it,
+                 'Set password' will show PasswordEntryDialog for multiple-entry confirm,
+                 also 'Generate random password'.
+        */
+        _entryPasswordField = new JPasswordField(PASSWORD_FIELD_COLUMNS);
+        setPasswordStoreEntryPasswordPlaintextVisible(false);
+        gridbag.setConstraints(_entryPasswordField, c);
+        panel.add(_entryPasswordField);
+
+        c.gridy++;
+        Component passwordFieldButtons = createPasswordStoreEntryPasswordFieldButtons();
+        gridbag.setConstraints(passwordFieldButtons, c);
+        panel.add(passwordFieldButtons);
+
+        c.gridy++;
+        c.fill = GridBagConstraints.BOTH;
+        _entryAdditionalInfoField = new JTextArea();
+        _entryAdditionalInfoField.setLineWrap(false);
+        // _entryAdditionalInfoField.setWrapStyleWord(true); // true - break on whitespace only
+        JScrollPane scrollPane = new JScrollPane(_entryAdditionalInfoField);
+        gridbag.setConstraints(scrollPane, c);
+        panel.add(scrollPane);
+
         panel.setBorder(BorderFactory.createLineBorder(Color.black));
         return panel;
+    }
+
+    private Component createPasswordStoreEntryPasswordFieldButtons() {
+        Box box = Box.createHorizontalBox();
+        box.setBorder(BorderFactory.createLineBorder(Color.black));
+
+        _showEntryPasswordButton = makeButton(box, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, -1 /*KeyEvent.VK_S*/, ButtonAction.SHOW_ENTRY_PASSWORD);
+        _hideEntryPasswordButton = makeButton(box, HIDE_ENTRY_PASSWORD_BUTTON_TEXT, -1 /*KeyEvent.VK_H*/, ButtonAction.HIDE_ENTRY_PASSWORD);
+
+        return box;
+    }
+
+    private void clearPasswordStoreEntryEditFields() {
+        _entryNameField.setText(null);
+        _entryUserIDField.setText(null);
+        _entryPasswordField.setText(null);
+        _entryAdditionalInfoField.setText(null);
+        setPasswordStoreEntryPasswordPlaintextVisible(false);
+    }
+
+    private void setPasswordStoreEntryEditFieldsEnabled(boolean enabled) {
+        _entryNameField.setEditable(enabled);
+        _entryUserIDField.setEditable(enabled);
+        _entryPasswordField.setEditable(enabled);
+        _entryAdditionalInfoField.setEditable(enabled);
+        _saveEntryButton.setEnabled(enabled);
+        _discardEntryButton.setEnabled(enabled);
+        _showEntryPasswordButton.setEnabled(enabled);
+        _hideEntryPasswordButton.setEnabled(enabled);
+    }
+
+    private void setPasswordStoreEntryPasswordPlaintextVisible(boolean visible) {
+        _entryPasswordField.setEchoChar(visible ? ((char) 0) : '*');
     }
 
     private Component createPasswordStoreEntrySaveButtons() {
@@ -254,7 +357,7 @@ public class MainWindow extends JFrame implements ActionListener {
         Box box = Box.createVerticalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _viewEntryButton   = makeButton(box, VIEW_ENTRY_BUTTON_TEXT,   KeyEvent.VK_V, ButtonAction.VIEW_ENTRY);
+        _viewEntryButton   = makeButton(box, VIEW_ENTRY_BUTTON_TEXT,   KeyEvent.VK_O, ButtonAction.VIEW_ENTRY);
         _addEntryButton    = makeButton(box, ADD_ENTRY_BUTTON_TEXT,    KeyEvent.VK_A, ButtonAction.ADD_ENTRY);
         _removeEntryButton = makeButton(box, REMOVE_ENTRY_BUTTON_TEXT, KeyEvent.VK_D, ButtonAction.REMOVE_ENTRY);
 
@@ -327,7 +430,14 @@ public class MainWindow extends JFrame implements ActionListener {
     private void viewSelectedEntry() {
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         assert (entry != null);
-        // TODO: update text fields with data in entry and enable them
+        _entryNameField.setText(entry.getDisplayName());
+        _entryUserIDField.setText(entry.getUserID());
+        char[] password = entry.getPassword();
+        _entryPasswordField.setText(password == null ? null : new String(password));
+        // No choice but to create a String object with the possibly-secret data here
+        char[] additional = entry.getAdditionalInfo();
+        _entryAdditionalInfoField.setText(additional == null ? null : new String(additional));
+        setPasswordStoreEntryEditFieldsEnabled(true);
     }
 
     private void unlockSelectedStore() {
@@ -527,15 +637,22 @@ public class MainWindow extends JFrame implements ActionListener {
         }
     }
 
-    private void closeDisplayedEntry(boolean saveEdits) {
+    /**
+     * @return the entry that was selected
+     */
+    private PasswordStoreEntry closeDisplayedEntry(boolean saveEdits) {
+        setPasswordStoreEntryEditFieldsEnabled(false);
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         if (entry == null) {
-            return;
+            assert (!saveEdits);
+        } else if (saveEdits) {
+            entry.setDisplayName(_entryNameField.getText());
+            entry.setUserID(_entryUserIDField.getText());
+            entry.setPassword(_entryPasswordField.getPassword());
+            entry.setAdditionalInfo(_entryAdditionalInfoField.getText().toCharArray());
         }
-        if (saveEdits) {
-            // TODO: read text fields and write to entry
-        }
-        // TODO: set text fields to empty and disable them and Save / Cancel buttons
+        clearPasswordStoreEntryEditFields();
+        return entry;
     }
 
     /**
@@ -572,10 +689,16 @@ public class MainWindow extends JFrame implements ActionListener {
             removeSelectedEntry();
             break;
         case SAVE_ENTRY:
-            closeDisplayedEntry(true);
+            reloadPasswordStoreEntryList(closeDisplayedEntry(true));
             break;
         case DISCARD_ENTRY:
             closeDisplayedEntry(false);
+            break;
+        case SHOW_ENTRY_PASSWORD:
+            setPasswordStoreEntryPasswordPlaintextVisible(true);
+            break;
+        case HIDE_ENTRY_PASSWORD:
+            setPasswordStoreEntryPasswordPlaintextVisible(false);
             break;
         default:
             break;
