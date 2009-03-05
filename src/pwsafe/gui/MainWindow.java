@@ -53,6 +53,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String UNLOCK_STORE_BUTTON_TEXT = "Unlock";
     private static final String CHANGE_STORE_PASSWORD_BUTTON_TEXT = "Change password";
     private static final String SET_STORE_PASSWORD_BUTTON_TEXT = "Set password";
+    private static final String RENAME_STORE_BUTTON_TEXT = "Rename";
     private static final String LOCK_STORE_BUTTON_TEXT = "Lock";
     private static final String ADD_STORE_BUTTON_TEXT = "Add new store";
     private static final String REMOVE_STORE_BUTTON_TEXT = "Delete store";
@@ -69,6 +70,7 @@ public class MainWindow extends JFrame implements ActionListener {
         UNLOCK_STORE,
         LOCK_STORE,
         CHANGE_STORE_PASSWORD,
+        RENAME_STORE,
         ADD_STORE,
         REMOVE_STORE,
         // Entry list
@@ -87,6 +89,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private JList _storeList;
     private JButton _unlockStoreButton;
     private JButton _changeStorePasswordButton;
+    private JButton _renameStoreButton;
     private JButton _lockStoreButton;
     private JButton _addStoreButton;
     private JButton _removeStoreButton;
@@ -306,7 +309,7 @@ public class MainWindow extends JFrame implements ActionListener {
         _unlockStoreButton = makeButton(box, UNLOCK_STORE_BUTTON_TEXT, KeyEvent.VK_U,        ButtonAction.UNLOCK_STORE);
         _changeStorePasswordButton =
                              makeButton(box, CHANGE_STORE_PASSWORD_BUTTON_TEXT, -1 /*KeyEvent.VK_C*/, ButtonAction.CHANGE_STORE_PASSWORD);
-        // TODO: button to rename store
+        _renameStoreButton = makeButton(box, RENAME_STORE_BUTTON_TEXT, -1 /*KeyEvent.VK_N*/, ButtonAction.RENAME_STORE);
         _lockStoreButton   = makeButton(box, LOCK_STORE_BUTTON_TEXT,   KeyEvent.VK_L,        ButtonAction.LOCK_STORE);
         _addStoreButton    = makeButton(box, ADD_STORE_BUTTON_TEXT,    -1 /*KeyEvent.VK_A*/, ButtonAction.ADD_STORE);
         _removeStoreButton = makeButton(box, REMOVE_STORE_BUTTON_TEXT, -1 /*KeyEvent.VK_R*/, ButtonAction.REMOVE_STORE);
@@ -367,7 +370,7 @@ public class MainWindow extends JFrame implements ActionListener {
         reloadPasswordStoreEntryList(null);
     }
 
-    private void changeStorePassword() {
+    private void changeSelectedStorePassword() {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         assert (store != null);
         assert (!store.isLocked());
@@ -383,12 +386,23 @@ public class MainWindow extends JFrame implements ActionListener {
         reloadPasswordStoreList(store);
     }
 
+    private void renameSelectedStore() {
+        PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
+        assert (store != null);
+        String newStoreName = JOptionPane.showInputDialog(this,
+                "Enter new name for store:", "Rename store", JOptionPane.QUESTION_MESSAGE);
+        if (newStoreName != null && !"".equals(newStoreName)) {
+            store.setStoreName(newStoreName);
+            reloadPasswordStoreList(store);
+        }
+    }
+
     private void removeSelectedStore() {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         assert (store != null);
         if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
-                "Permanently delete password store named '" + store.getStoreName() + "'?",
-                "Confirm password store delete",
+                "Permanently delete store named '" + store.getStoreName() + "'?",
+                "Confirm store delete",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE)) {
             _passwordStoreList.removeStore(store);
@@ -404,8 +418,8 @@ public class MainWindow extends JFrame implements ActionListener {
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         assert (entry != null);
         if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
-                "Permanently delete password account entry named '" + entry.getDisplayName() + "'?",
-                "Confirm password account entry delete",
+                "Permanently delete entry named '" + entry.getDisplayName() + "'?",
+                "Confirm entry delete",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE)) {
             store.getEntryList().removeEntry(entry);
@@ -486,6 +500,7 @@ public class MainWindow extends JFrame implements ActionListener {
             _unlockStoreButton.setEnabled(false);
             _lockStoreButton.setEnabled(false);
             _changeStorePasswordButton.setEnabled(false);
+            _renameStoreButton.setEnabled(false);
             _removeStoreButton.setEnabled(false);
             _addEntryButton.setEnabled(false);
         } else {
@@ -496,6 +511,7 @@ public class MainWindow extends JFrame implements ActionListener {
             _changeStorePasswordButton.setEnabled(!isLocked);
             _changeStorePasswordButton.setText((isLocked || hasKey) ? CHANGE_STORE_PASSWORD_BUTTON_TEXT
                                                                     : SET_STORE_PASSWORD_BUTTON_TEXT);
+            _renameStoreButton.setEnabled(true);
             _removeStoreButton.setEnabled(true);
             _addEntryButton.setEnabled(!isLocked);
         }
@@ -536,7 +552,10 @@ public class MainWindow extends JFrame implements ActionListener {
             lockSelectedStore();
             break;
         case CHANGE_STORE_PASSWORD:
-            changeStorePassword();
+            changeSelectedStorePassword();
+            break;
+        case RENAME_STORE:
+            renameSelectedStore();
             break;
         case REMOVE_STORE:
             removeSelectedStore();
