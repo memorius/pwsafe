@@ -14,8 +14,6 @@ import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 
-import pwsafe.EncryptionKey;
-
 /**
  * Static utility methods for encryption/decryption
  *
@@ -29,10 +27,10 @@ public final class CryptoUtils {
     private CryptoUtils() {}
 
 
+    private static final long PASSWORD_HASH_ITERATION_TIME_MILLIS = 1 * 1000; // min time to hash when encrypting
     private static final int PASSWORD_SALT_LENGTH_BYTES = 32; // 256-bit
     private static final int NONCE_LENGTH_BYTES         = 32; // 256-bit
     private static final int MAC_LENGTH_BYTES           = 16; // 128-bit - this EAX impl can't do > cipher block size
-    private static final int PASSWORD_HASH_ITERATIONS = 1000;
     private static final int BYTES_PER_INTEGER = 4;
     private static final int PREAMBLE_LENGTH = PASSWORD_SALT_LENGTH_BYTES + BYTES_PER_INTEGER + NONCE_LENGTH_BYTES;
 
@@ -58,14 +56,15 @@ public final class CryptoUtils {
 
         // Password salt info, see hashPasswordToKey
         byte[] passwordSalt = randomBytes(PASSWORD_SALT_LENGTH_BYTES);
-        int passwordHashIterations = PASSWORD_HASH_ITERATIONS;
 
-        byte[] encryptionKey;
+        KeyWithIterationCount keyInfo;
         try {
-            encryptionKey = key.makeKey(passwordSalt, passwordHashIterations);
+            keyInfo = key.calibrateAndMakeKey(passwordSalt, PASSWORD_HASH_ITERATION_TIME_MILLIS);
         } catch (IllegalStateException e) {
             throw new CryptoException("Invalid key", e);
         }
+        byte[] encryptionKey = keyInfo.getKey();
+        final int passwordHashIterations = keyInfo.getIterationCount();
 
         try {
             /* Note the security relies on never repeating the same nonce with a given key.
@@ -230,6 +229,7 @@ public final class CryptoUtils {
 
     /**
      * Hash the password with the specified salt, then re-hash for the specified number of iterations.
+     * Used during decryption.
      * <p>
      * Hashing the password many times (and using a salt) gives some degree of protection against use of
      * rainbow-table attacks. (These would work by testing each password in some pre-generated list of (password, hash),
@@ -239,9 +239,44 @@ public final class CryptoUtils {
      *
      * @param password, will be transformed into its UTF-16 bytes before hashing
      * @param salt a random salt to hash with the password
-     * @param iterations the iteration count, must be > 0
+     * @param hashIterations the iteration count, must be > 0
      */
     public static byte[] hashPasswordToKey(char[] password, byte[] salt, int hashIterations) {
+        if (hashIterations <= 0) {
+            throw new IllegalArgumentException("hashIterations must be > 0, got " + hashIterations);
+        }
+        KeyWithIterationCount keyInfo = doHashPasswordToKey(password, salt, hashIterations, -1);
+        assert (keyInfo.getIterationCount() == hashIterations);
+        return keyInfo.getKey();
+    }
+
+    /**
+     * Hash the password with the specified salt, then re-hash continuously until the specified time has elapsed,
+     * returning the resulting key and the actualy iteration count used.
+     * Used during encryption.
+     * <p>
+     * Hashing the password many times (and using a salt) gives some degree of protection against use of
+     * rainbow-table attacks. (These would work by testing each password in some pre-generated list of (password, hash),
+     * by testing whether decryption succeeds using each hash.) Using a new random salt each time we encrypt forces a
+     * new table to be built to attack each new encrypted output; using many iterations increases the cost of building
+     * the table.
+     *
+     * @param password, will be transformed into its UTF-16 bytes before hashing
+     * @param salt a random salt to hash with the password
+     * @param hashIterationTimeMillis the time to hash for, must be > 0
+     */
+    public static KeyWithIterationCount calibrateAndHashPasswordToKey(char[] password, byte[] salt,
+            long hashIterationTimeMillis) {
+        if (hashIterationTimeMillis <= 0L) {
+            throw new IllegalArgumentException("hashIterationTimeMillis must be > 0, got " + hashIterationTimeMillis);
+        }
+        KeyWithIterationCount keyInfo = doHashPasswordToKey(password, salt, -1, hashIterationTimeMillis);
+        assert (keyInfo.getIterationCount() > 0);
+        return keyInfo;
+    }
+
+    private static KeyWithIterationCount doHashPasswordToKey(char[] password, byte[] salt,
+            int hashIterations, long hashIterationTimeMillis) {
         if (password == null) {
             throw new IllegalArgumentException("password must not be null");
         }
@@ -254,9 +289,8 @@ public final class CryptoUtils {
         if (salt.length == 0) {
             throw new IllegalArgumentException("salt must not be zero length");
         }
-        if (hashIterations <= 0) {
-            throw new IllegalArgumentException("hashIterations must be > 0, got " + hashIterations);
-        }
+        assert (hashIterations > 0 || hashIterationTimeMillis > 0);
+
         /* Convert to a byte array according to the scheme in PKCS12 (unicode, big endian, 2 zero pad bytes at the end).
            This call avoids allocating a java.lang.String which might intern the password data,
            which would prevent us zeroing it. */
@@ -264,6 +298,7 @@ public final class CryptoUtils {
 
         Digest digest = new SHA256Digest();
         byte[] output = new byte[digest.getDigestSize()];
+        byte[] input = new byte[digest.getDigestSize()];
 
         // First iteration - hash with salt, into output
         digest.update(salt, 0, salt.length);
@@ -273,17 +308,59 @@ public final class CryptoUtils {
         assert (outputLength == output.length);
 
         // Remaining iterations - re-hash output
-        byte[] input = new byte[digest.getDigestSize()];
-        for (int i = 0; i < hashIterations - 1; i++) {
-            // input this time is the output from the last iteration; then reuse (overwrite) output array
-            byte[] temp = input;
-            input = output;
-            output = temp;
-            digest.update(input, 0, input.length);
-            outputLength = digest.doFinal(output, 0);
-            assert (outputLength == output.length);
+        if (hashIterations > 0) {
+            // Fixed iteration count (decryption)
+            for (int i = 1; i < hashIterations; i++) { // 0th iteration was the one with the salt
+                // input this time is the output from the last iteration; then reuse (overwrite) output array
+                byte[] temp = input;
+                input = output;
+                output = temp;
+                digest.update(input, 0, input.length);
+                outputLength = digest.doFinal(output, 0);
+                assert (outputLength == output.length);
+            }
+            return new KeyWithIterationCount(output, hashIterations);
+        } else {
+            // Minimum iteration time (encryption)
+            final int iterationIncrement = 100;
+            int actualHashIterations = 1; // 0th iteration was the one with the salt
+            final long stopTime = System.currentTimeMillis() + hashIterationTimeMillis;
+            do {
+                for (int i = 0; i < iterationIncrement; i++) {
+                    // input this time is the output from the last iteration; then reuse (overwrite) output array
+                    byte[] temp = input;
+                    input = output;
+                    output = temp;
+                    digest.update(input, 0, input.length);
+                    outputLength = digest.doFinal(output, 0);
+                    assert (outputLength == output.length);
+                }
+                actualHashIterations += iterationIncrement;
+            } while (System.currentTimeMillis() <= stopTime);
+            return new KeyWithIterationCount(output, actualHashIterations);
         }
-        return output;
+    }
+
+    /**
+     * Value object for returning multiple arguments from crypto methods
+     */
+    public static final class KeyWithIterationCount {
+
+        private final byte[] _key;
+        private final int _iterationCount;
+
+        private KeyWithIterationCount(final byte[] key, final int iterationCount) {
+            _key = key;
+            _iterationCount = iterationCount;
+        }
+
+        public byte[] getKey() {
+            return _key;
+        }
+
+        public int getIterationCount() {
+            return _iterationCount;
+        }
     }
 
     public static final class CryptoException extends Exception {

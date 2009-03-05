@@ -111,30 +111,8 @@ public class PWSafe {
     }
 
     public void showDialog() {
-        // TODO: run a Swing dialog then destroy store
         MainWindow window = new MainWindow(this, _passwordStores);
         window.setVisible(true);
         // Return and leave the dialog (AWT thread) as the only thing running - we exit when it is disposed
-
-        //String password = "mypassword";
-
-        // Unlock existing
-        /*
-        try {
-            _passwordStores.getStores().get(0).unlock(new EncryptionKey(password.toCharArray()));
-        } catch (DecryptionException e) {
-            throw new RuntimeException("Unlock failed", e);
-        }
-        */
-
-        // Lock new and save
-        /*
-        _passwordStores.getStores().get(0).setKey(new EncryptionKey(password.toCharArray()));
-        try {
-            save();
-        } catch (DatastoreFileException e) {
-            throw new RuntimeException("Save failed", e);
-        }
-        */
     }
 }

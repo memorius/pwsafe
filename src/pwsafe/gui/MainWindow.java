@@ -33,12 +33,12 @@ import javax.swing.event.ListSelectionListener;
 
 import pwsafe.DecryptionException;
 import pwsafe.EncryptionException;
-import pwsafe.EncryptionKey;
 import pwsafe.PWSafe;
 import pwsafe.store.PasswordStore;
 import pwsafe.store.PasswordStoreEntry;
 import pwsafe.store.PasswordStoreEntryList;
 import pwsafe.store.PasswordStoreList;
+import pwsafe.util.EncryptionKey;
 
 /**
  * The main top-level application window

@@ -12,8 +12,8 @@ import java.util.List;
 
 import pwsafe.DecryptionException;
 import pwsafe.EncryptionException;
-import pwsafe.EncryptionKey;
 import pwsafe.util.CryptoUtils;
+import pwsafe.util.EncryptionKey;
 import pwsafe.util.SerializationUtils;
 
 /**

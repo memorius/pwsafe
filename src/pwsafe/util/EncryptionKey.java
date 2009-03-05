@@ -1,4 +1,4 @@
-package pwsafe;
+package pwsafe.util;
 
 import java.util.Arrays;
 
@@ -45,8 +45,8 @@ public class EncryptionKey {
     }
 
     /**
-     * Make an encryption key (secret) by hashing the password contained in this EncryptionKey, given parameters for the
-     * hashing algorithm.
+     * Make a decryption key (secret) by hashing the password contained in this EncryptionKey, given parameters for the
+     * hashing algorithm. Used during decryption.
      * <p>
      * <b>IMPORTANT:</b> this returns a newly-allocated array which is the caller's responsibility.
      * For security, caller should avoid storing references longer than necessary,
@@ -55,9 +55,25 @@ public class EncryptionKey {
      * @return a new array containing the key bytes, never null or empty
      * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
-    public byte[] makeKey(byte[] salt, int hashIterations) {
+    protected byte[] makeKey(byte[] salt, int hashIterations) {
         checkNotDestroyed();
         return CryptoUtils.hashPasswordToKey(_password, salt, hashIterations);
+    }
+
+    /**
+     * Make an encryption key (secret) by hashing the password contained in this EncryptionKey, given parameters for the
+     * hashing algorithm. Used during encryption.
+     * <p>
+     * <b>IMPORTANT:</b> this returns a newly-allocated array which is the caller's responsibility.
+     * For security, caller should avoid storing references longer than necessary,
+     * and MUST ensure it is zero-overwritten and discarded when finished.
+     *
+     * @return a new array containing the key bytes, never null or empty
+     * @throws IllegalStateException if {@link #destroySecrets()} method has been called
+     */
+    protected CryptoUtils.KeyWithIterationCount calibrateAndMakeKey(byte[] salt, long hashIterationTimeMillis) {
+        checkNotDestroyed();
+        return CryptoUtils.calibrateAndHashPasswordToKey(_password, salt, hashIterationTimeMillis);
     }
 
     /**
