@@ -117,10 +117,11 @@ public class MainWindow extends JFrame implements ActionListener {
     private JPasswordField _entryPasswordField;
     private JTextArea _entryAdditionalInfoField;
     private JButton _showOrHideEntryPasswordButton;
-    private boolean _entryPasswordPlaintextVisible = false;
     private JButton _saveEntryButton;
     private JButton _discardEntryButton;
 
+    private boolean _entryPasswordPlaintextVisible = false;
+    private boolean _isNewEntry = false;
 
     /**
      * Construct a MainWindow
@@ -440,6 +441,7 @@ public class MainWindow extends JFrame implements ActionListener {
         char[] additional = entry.getAdditionalInfo();
         _entryAdditionalInfoField.setText(additional == null ? null : new String(additional));
         setPasswordStoreEntryEditFieldsEnabled(true);
+        setPasswordStoreEntryListButtonsEnabled(false);
     }
 
     private void unlockSelectedStore() {
@@ -531,9 +533,7 @@ public class MainWindow extends JFrame implements ActionListener {
         }
     }
 
-    private void removeSelectedEntry() {
-        PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
-        assert (store != null && !store.isLocked());
+    private void confirmAndRemoveSelectedEntry() {
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         assert (entry != null);
         if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
@@ -541,10 +541,16 @@ public class MainWindow extends JFrame implements ActionListener {
                 "Confirm entry delete",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE)) {
-            store.getEntryList().removeEntry(entry);
+            removeSelectedEntry(entry);
             // TODO: select the next lowest entry rather than going back to the first
             reloadPasswordStoreEntryList(null);
         }
+    }
+
+    private void removeSelectedEntry(PasswordStoreEntry entry) {
+        PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
+        assert (store != null && !store.isLocked());
+        store.getEntryList().removeEntry(entry);
     }
 
     private void addNewStore() {
@@ -559,6 +565,7 @@ public class MainWindow extends JFrame implements ActionListener {
         PasswordStoreEntry newEntry = store.getEntryList().addEntry(DEFAULT_NEW_ENTRY_NAME);
         reloadPasswordStoreEntryList(newEntry);
         viewSelectedEntry();
+        _isNewEntry = true;
     }
 
     /**
@@ -637,6 +644,14 @@ public class MainWindow extends JFrame implements ActionListener {
             _viewEntryButton.setEnabled(true);
             _removeEntryButton.setEnabled(true);
         }
+        _addEntryButton.setEnabled(true);
+    }
+
+    private void setPasswordStoreEntryListButtonsEnabled(boolean enabled) {
+        _viewEntryButton.setEnabled(enabled);
+        _addEntryButton.setEnabled(enabled);
+        _removeEntryButton.setEnabled(enabled);
+        _entryList.setEnabled(enabled);
     }
 
     /**
@@ -652,8 +667,13 @@ public class MainWindow extends JFrame implements ActionListener {
             entry.setUserID(_entryUserIDField.getText());
             entry.setPassword(_entryPasswordField.getPassword());
             entry.setAdditionalInfo(_entryAdditionalInfoField.getText().toCharArray());
+        } else if (_isNewEntry) {
+            // Discarding newly-added entry, remove completely
+            removeSelectedEntry(entry);
+            entry = null;
         }
         clearPasswordStoreEntryEditFields();
+        _isNewEntry = false;
         return entry;
     }
 
@@ -688,13 +708,13 @@ public class MainWindow extends JFrame implements ActionListener {
             addNewEntry();
             break;
         case REMOVE_ENTRY:
-            removeSelectedEntry();
+            confirmAndRemoveSelectedEntry();
             break;
         case SAVE_ENTRY:
             reloadPasswordStoreEntryList(closeDisplayedEntry(true));
             break;
         case DISCARD_ENTRY:
-            closeDisplayedEntry(false);
+            reloadPasswordStoreEntryList(closeDisplayedEntry(false));
             break;
         case SHOW_OR_HIDE_ENTRY_PASSWORD:
             setPasswordStoreEntryPasswordPlaintextVisible(!_entryPasswordPlaintextVisible);
