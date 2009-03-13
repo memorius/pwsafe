@@ -89,8 +89,7 @@ public class MainWindow extends JFrame implements ActionListener {
         REMOVE_ENTRY,
         SAVE_ENTRY,
         DISCARD_ENTRY,
-        SHOW_ENTRY_PASSWORD,
-        HIDE_ENTRY_PASSWORD
+        SHOW_OR_HIDE_ENTRY_PASSWORD
     }
 
 // Underlying data store
@@ -117,8 +116,8 @@ public class MainWindow extends JFrame implements ActionListener {
     private JTextField _entryUserIDField;
     private JPasswordField _entryPasswordField;
     private JTextArea _entryAdditionalInfoField;
-    private JButton _showEntryPasswordButton;
-    private JButton _hideEntryPasswordButton;
+    private JButton _showOrHideEntryPasswordButton;
+    private boolean _entryPasswordPlaintextVisible = false;
     private JButton _saveEntryButton;
     private JButton _discardEntryButton;
 
@@ -239,7 +238,6 @@ public class MainWindow extends JFrame implements ActionListener {
                  also 'Generate random password'.
         */
         _entryPasswordField = new JPasswordField(PASSWORD_FIELD_COLUMNS);
-        setPasswordStoreEntryPasswordPlaintextVisible(false);
         gridbag.setConstraints(_entryPasswordField, c);
         panel.add(_entryPasswordField);
 
@@ -247,6 +245,7 @@ public class MainWindow extends JFrame implements ActionListener {
         Component passwordFieldButtons = createPasswordStoreEntryPasswordFieldButtons();
         gridbag.setConstraints(passwordFieldButtons, c);
         panel.add(passwordFieldButtons);
+        setPasswordStoreEntryPasswordPlaintextVisible(false);
 
         c.gridy++;
         c.fill = GridBagConstraints.BOTH;
@@ -265,8 +264,8 @@ public class MainWindow extends JFrame implements ActionListener {
         Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _showEntryPasswordButton = makeButton(box, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, -1 /*KeyEvent.VK_S*/, ButtonAction.SHOW_ENTRY_PASSWORD);
-        _hideEntryPasswordButton = makeButton(box, HIDE_ENTRY_PASSWORD_BUTTON_TEXT, -1 /*KeyEvent.VK_H*/, ButtonAction.HIDE_ENTRY_PASSWORD);
+        _showOrHideEntryPasswordButton = makeButton(box, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_S,
+                ButtonAction.SHOW_OR_HIDE_ENTRY_PASSWORD);
 
         return box;
     }
@@ -286,11 +285,14 @@ public class MainWindow extends JFrame implements ActionListener {
         _entryAdditionalInfoField.setEditable(enabled);
         _saveEntryButton.setEnabled(enabled);
         _discardEntryButton.setEnabled(enabled);
-        _showEntryPasswordButton.setEnabled(enabled);
-        _hideEntryPasswordButton.setEnabled(enabled);
+        _showOrHideEntryPasswordButton.setEnabled(enabled);
     }
 
     private void setPasswordStoreEntryPasswordPlaintextVisible(boolean visible) {
+        _entryPasswordPlaintextVisible = visible;
+        _showOrHideEntryPasswordButton.setText(visible ? HIDE_ENTRY_PASSWORD_BUTTON_TEXT
+                                                       : SHOW_ENTRY_PASSWORD_BUTTON_TEXT);
+        _showOrHideEntryPasswordButton.setMnemonic(visible ? KeyEvent.VK_H : KeyEvent.VK_S);
         _entryPasswordField.setEchoChar(visible ? ((char) 0) : '*');
     }
 
@@ -694,11 +696,8 @@ public class MainWindow extends JFrame implements ActionListener {
         case DISCARD_ENTRY:
             closeDisplayedEntry(false);
             break;
-        case SHOW_ENTRY_PASSWORD:
-            setPasswordStoreEntryPasswordPlaintextVisible(true);
-            break;
-        case HIDE_ENTRY_PASSWORD:
-            setPasswordStoreEntryPasswordPlaintextVisible(false);
+        case SHOW_OR_HIDE_ENTRY_PASSWORD:
+            setPasswordStoreEntryPasswordPlaintextVisible(!_entryPasswordPlaintextVisible);
             break;
         default:
             break;
