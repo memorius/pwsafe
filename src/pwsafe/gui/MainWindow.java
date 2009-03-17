@@ -344,7 +344,7 @@ public class MainWindow extends JFrame implements ActionListener {
                         return; // Will get another event
                     }
                     // int index = e.getFirstIndex();
-                    updateEntryListButtonState();
+                    enableEntryListAndButtons();
                     // TODO: need this, but must prevent it interacting with double-click 'viewSelectedEntry'
                     // closeDisplayedEntry(false);
                 }
@@ -404,7 +404,7 @@ public class MainWindow extends JFrame implements ActionListener {
                         return; // Will get another event
                     }
                     // int index = e.getFirstIndex();
-                    updateStoreListButtonState();
+                    enableStoreListAndButtons();
                     reloadPasswordStoreEntryList(null);
                 }
             });
@@ -442,6 +442,7 @@ public class MainWindow extends JFrame implements ActionListener {
         _entryAdditionalInfoField.setText(additional == null ? null : new String(additional));
         setPasswordStoreEntryEditFieldsEnabled(true);
         setPasswordStoreEntryListButtonsEnabled(false);
+        setPasswordStoreListButtonsEnabled(false);
     }
 
     private void unlockSelectedStore() {
@@ -585,7 +586,7 @@ public class MainWindow extends JFrame implements ActionListener {
         } else if (!listModel.isEmpty()) {
             _storeList.setSelectedIndex(0);
         }
-        updateStoreListButtonState();
+        enableStoreListAndButtons();
     }
 
     /**
@@ -594,7 +595,7 @@ public class MainWindow extends JFrame implements ActionListener {
      */
     private void reloadPasswordStoreEntryList(PasswordStoreEntry entryToSelect) {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
-        closeDisplayedEntry(false);
+        // closeDisplayedEntry(false);
         DefaultListModel listModel = new DefaultListModel();
         if (store != null && !store.isLocked()) {
             for (PasswordStoreEntry entry : store.getEntryList().getEntries()) {
@@ -609,10 +610,10 @@ public class MainWindow extends JFrame implements ActionListener {
         } else if (!listModel.isEmpty()) {
             _entryList.setSelectedIndex(0);
         }
-        updateEntryListButtonState();
+        enableEntryListAndButtons();
     }
 
-    private void updateStoreListButtonState() {
+    private void enableStoreListAndButtons() {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         if (store == null) {
             _unlockStoreButton.setEnabled(false);
@@ -633,10 +634,14 @@ public class MainWindow extends JFrame implements ActionListener {
             _removeStoreButton.setEnabled(true);
             _addEntryButton.setEnabled(!isLocked);
         }
+        _addStoreButton.setEnabled(true);
+        _storeList.setEnabled(true);
     }
 
-    private void updateEntryListButtonState() {
+    private void enableEntryListAndButtons() {
+        PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
+        boolean storeUnlocked = (store != null && !store.isLocked());
         if (entry == null) {
             _viewEntryButton.setEnabled(false);
             _removeEntryButton.setEnabled(false);
@@ -644,14 +649,25 @@ public class MainWindow extends JFrame implements ActionListener {
             _viewEntryButton.setEnabled(true);
             _removeEntryButton.setEnabled(true);
         }
-        _addEntryButton.setEnabled(true);
+        _addEntryButton.setEnabled(storeUnlocked);
+        _entryList.setEnabled(storeUnlocked);
     }
 
     private void setPasswordStoreEntryListButtonsEnabled(boolean enabled) {
+        _entryList.setEnabled(enabled);
         _viewEntryButton.setEnabled(enabled);
         _addEntryButton.setEnabled(enabled);
         _removeEntryButton.setEnabled(enabled);
-        _entryList.setEnabled(enabled);
+    }
+
+    private void setPasswordStoreListButtonsEnabled(boolean enabled) {
+        _storeList.setEnabled(enabled);
+        _unlockStoreButton.setEnabled(enabled);
+        _changeStorePasswordButton.setEnabled(enabled);
+        _renameStoreButton.setEnabled(enabled);
+        _lockStoreButton.setEnabled(enabled);
+        _addStoreButton.setEnabled(enabled);
+        _removeStoreButton.setEnabled(enabled);
     }
 
     /**
@@ -659,6 +675,7 @@ public class MainWindow extends JFrame implements ActionListener {
      */
     private PasswordStoreEntry closeDisplayedEntry(boolean saveEdits) {
         setPasswordStoreEntryEditFieldsEnabled(false);
+        enableStoreListAndButtons();
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         if (entry == null) {
             assert (!saveEdits);
