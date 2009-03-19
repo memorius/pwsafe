@@ -58,8 +58,8 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String DEFAULT_NEW_STORE_NAME = "New store";
     // Store list
     private static final String UNLOCK_STORE_BUTTON_TEXT = "Unlock";
-    private static final String CHANGE_STORE_PASSWORD_BUTTON_TEXT = "Change password";
-    private static final String SET_STORE_PASSWORD_BUTTON_TEXT = "Set password";
+    private static final String CHANGE_STORE_PASSWORD_BUTTON_TEXT = "Change store password";
+    private static final String SET_STORE_PASSWORD_BUTTON_TEXT = "Set store password";
     private static final String RENAME_STORE_BUTTON_TEXT = "Rename";
     private static final String LOCK_STORE_BUTTON_TEXT = "Lock";
     private static final String ADD_STORE_BUTTON_TEXT = "Add store";
@@ -71,9 +71,10 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String SAVE_ENTRY_BUTTON_TEXT = "Save entry";
     private static final String DISCARD_ENTRY_BUTTON_TEXT = "Discard edited entry";
     // Entry editing
-    private static final String SHOW_ENTRY_PASSWORD_BUTTON_TEXT = "Show";
+    private static final String SHOW_ENTRY_PASSWORD_BUTTON_TEXT = "Reveal";
     private static final String HIDE_ENTRY_PASSWORD_BUTTON_TEXT = "Hide";
     private static final String COPY_ENTRY_PASSWORD_BUTTON_TEXT = "Copy";
+    private static final String CHANGE_ENTRY_PASSWORD_BUTTON_TEXT = "Edit";
 
     private static final int PASSWORD_FIELD_COLUMNS = 10;
 
@@ -92,7 +93,8 @@ public class MainWindow extends JFrame implements ActionListener {
         SAVE_ENTRY,
         DISCARD_ENTRY,
         SHOW_OR_HIDE_ENTRY_PASSWORD,
-        COPY_ENTRY_PASSWORD
+        COPY_ENTRY_PASSWORD,
+        CHANGE_ENTRY_PASSWORD
     }
 
 // Underlying data store
@@ -118,6 +120,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private JTextField _entryUserIDField;
     private JPasswordField _entryPasswordField;
     private JTextArea _entryAdditionalInfoField;
+    private JButton _changeEntryPasswordButton;
     private JButton _showOrHideEntryPasswordButton;
     private JButton _copyEntryPasswordButton;
     private JButton _saveEntryButton;
@@ -237,11 +240,8 @@ public class MainWindow extends JFrame implements ActionListener {
         panel.add(_entryUserIDField);
 
         c.gridy++;
-        /* TODO: make this always disabled, have 'Set password', 'Copy password' buttons next to it,
-                 'Set password' will show PasswordEntryDialog for multiple-entry confirm,
-                 also 'Generate random password'.
-        */
         _entryPasswordField = new JPasswordField(PASSWORD_FIELD_COLUMNS);
+        _entryPasswordField.setEditable(false);
         gridbag.setConstraints(_entryPasswordField, c);
         panel.add(_entryPasswordField);
 
@@ -269,7 +269,9 @@ public class MainWindow extends JFrame implements ActionListener {
         Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _showOrHideEntryPasswordButton = makeButton(box, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_S,
+        _changeEntryPasswordButton = makeButton(box, CHANGE_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_E,
+                ButtonAction.CHANGE_ENTRY_PASSWORD);
+        _showOrHideEntryPasswordButton = makeButton(box, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_R,
                 ButtonAction.SHOW_OR_HIDE_ENTRY_PASSWORD);
         _copyEntryPasswordButton = makeButton(box, COPY_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_C,
                 ButtonAction.COPY_ENTRY_PASSWORD);
@@ -288,10 +290,10 @@ public class MainWindow extends JFrame implements ActionListener {
     private void setPasswordStoreEntryEditFieldsEnabled(boolean enabled) {
         _entryNameField.setEditable(enabled);
         _entryUserIDField.setEditable(enabled);
-        _entryPasswordField.setEditable(enabled);
         _entryAdditionalInfoField.setEditable(enabled);
         _saveEntryButton.setEnabled(enabled);
         _discardEntryButton.setEnabled(enabled);
+        _changeEntryPasswordButton.setEnabled(enabled);
         _showOrHideEntryPasswordButton.setEnabled(enabled);
         _copyEntryPasswordButton.setEnabled(enabled);
     }
@@ -429,7 +431,7 @@ public class MainWindow extends JFrame implements ActionListener {
         _lockOrUnlockStoreButton = makeButton(box, UNLOCK_STORE_BUTTON_TEXT, KeyEvent.VK_U,    ButtonAction.LOCK_OR_UNLOCK_STORE);
         _changeStorePasswordButton =
                              makeButton(box, CHANGE_STORE_PASSWORD_BUTTON_TEXT, KeyEvent.VK_P, ButtonAction.CHANGE_STORE_PASSWORD);
-        _renameStoreButton = makeButton(box, RENAME_STORE_BUTTON_TEXT, KeyEvent.VK_R,          ButtonAction.RENAME_STORE);
+        _renameStoreButton = makeButton(box, RENAME_STORE_BUTTON_TEXT, KeyEvent.VK_N,          ButtonAction.RENAME_STORE);
         _addStoreButton    = makeButton(box, ADD_STORE_BUTTON_TEXT,    -1,                     ButtonAction.ADD_STORE);
         _removeStoreButton = makeButton(box, REMOVE_STORE_BUTTON_TEXT, -1,                     ButtonAction.REMOVE_STORE);
 
@@ -518,6 +520,18 @@ public class MainWindow extends JFrame implements ActionListener {
         store.setKey(new EncryptionKey(password));
         // Reload list because it changes the status for new stores
         reloadPasswordStoreList(store);
+    }
+
+    private void changeSelectedEntryPassword() {
+        PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
+        assert (entry != null);
+        // Prompt for store password
+        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter new entry password", true);
+        char[] password = dialog.showDialog();
+        if (password == null || password.length == 0) { // cancelled / empty
+            return;
+        }
+        _entryPasswordField.setText(new String(password));
     }
 
     private void renameSelectedStore() {
@@ -772,6 +786,9 @@ public class MainWindow extends JFrame implements ActionListener {
             break;
         case COPY_ENTRY_PASSWORD:
             copySelectedEntryPassword();
+            break;
+        case CHANGE_ENTRY_PASSWORD:
+            changeSelectedEntryPassword();
             break;
         default:
             break;
