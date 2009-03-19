@@ -58,16 +58,16 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String DEFAULT_NEW_STORE_NAME = "New store";
     // Store list
     private static final String UNLOCK_STORE_BUTTON_TEXT = "Unlock";
-    private static final String CHANGE_STORE_PASSWORD_BUTTON_TEXT = "Change store password";
-    private static final String SET_STORE_PASSWORD_BUTTON_TEXT = "Set store password";
+    private static final String CHANGE_STORE_PASSWORD_BUTTON_TEXT = "Change password";
+    private static final String SET_STORE_PASSWORD_BUTTON_TEXT = "Set password";
     private static final String RENAME_STORE_BUTTON_TEXT = "Rename";
     private static final String LOCK_STORE_BUTTON_TEXT = "Lock";
-    private static final String ADD_STORE_BUTTON_TEXT = "Add store";
-    private static final String REMOVE_STORE_BUTTON_TEXT = "Delete store";
+    private static final String ADD_STORE_BUTTON_TEXT = "Add";
+    private static final String REMOVE_STORE_BUTTON_TEXT = "Delete";
     // Entry list
-    private static final String VIEW_ENTRY_BUTTON_TEXT = "Open entry";
-    private static final String ADD_ENTRY_BUTTON_TEXT = "Add entry";
-    private static final String REMOVE_ENTRY_BUTTON_TEXT = "Delete entry";
+    private static final String VIEW_ENTRY_BUTTON_TEXT = "Open";
+    private static final String ADD_ENTRY_BUTTON_TEXT = "Add";
+    private static final String REMOVE_ENTRY_BUTTON_TEXT = "Delete";
     private static final String SAVE_ENTRY_BUTTON_TEXT = "Save entry";
     private static final String DISCARD_ENTRY_BUTTON_TEXT = "Discard edited entry";
     // Entry editing
@@ -173,7 +173,7 @@ public class MainWindow extends JFrame implements ActionListener {
     }
 
     private Component createPasswordStoreListAndEntryListPanel() {
-        Box box = Box.createHorizontalBox();
+        Box box = Box.createVerticalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
         box.add(createPasswordStoreListPanel());
         box.add(createPasswordStoreEntryListPanel());
@@ -366,12 +366,12 @@ public class MainWindow extends JFrame implements ActionListener {
      * Control buttons for list of entries in currently-selected store
      */
     private Component createPasswordStoreEntryListButtons() {
-        Box box = Box.createVerticalBox();
+        Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _viewEntryButton   = makeButton(box, VIEW_ENTRY_BUTTON_TEXT,   KeyEvent.VK_O, ButtonAction.VIEW_ENTRY);
         _addEntryButton    = makeButton(box, ADD_ENTRY_BUTTON_TEXT,    KeyEvent.VK_A, ButtonAction.ADD_ENTRY);
         _removeEntryButton = makeButton(box, REMOVE_ENTRY_BUTTON_TEXT, KeyEvent.VK_D, ButtonAction.REMOVE_ENTRY);
+        _viewEntryButton   = makeButton(box, VIEW_ENTRY_BUTTON_TEXT,   KeyEvent.VK_O, ButtonAction.VIEW_ENTRY);
 
         return box;
     }
@@ -428,12 +428,17 @@ public class MainWindow extends JFrame implements ActionListener {
         Box box = Box.createVerticalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _lockOrUnlockStoreButton = makeButton(box, UNLOCK_STORE_BUTTON_TEXT, KeyEvent.VK_U,    ButtonAction.LOCK_OR_UNLOCK_STORE);
+        Box hbox = Box.createHorizontalBox();
+        _addStoreButton    = makeButton(hbox, ADD_STORE_BUTTON_TEXT,    -1,                     ButtonAction.ADD_STORE);
+        _removeStoreButton = makeButton(hbox, REMOVE_STORE_BUTTON_TEXT, -1,                     ButtonAction.REMOVE_STORE);
+        _lockOrUnlockStoreButton = makeButton(hbox, UNLOCK_STORE_BUTTON_TEXT, KeyEvent.VK_U,    ButtonAction.LOCK_OR_UNLOCK_STORE);
+        box.add(hbox);
+
+        hbox = Box.createHorizontalBox();
         _changeStorePasswordButton =
-                             makeButton(box, CHANGE_STORE_PASSWORD_BUTTON_TEXT, KeyEvent.VK_P, ButtonAction.CHANGE_STORE_PASSWORD);
-        _renameStoreButton = makeButton(box, RENAME_STORE_BUTTON_TEXT, KeyEvent.VK_N,          ButtonAction.RENAME_STORE);
-        _addStoreButton    = makeButton(box, ADD_STORE_BUTTON_TEXT,    -1,                     ButtonAction.ADD_STORE);
-        _removeStoreButton = makeButton(box, REMOVE_STORE_BUTTON_TEXT, -1,                     ButtonAction.REMOVE_STORE);
+                             makeButton(hbox, CHANGE_STORE_PASSWORD_BUTTON_TEXT, KeyEvent.VK_P, ButtonAction.CHANGE_STORE_PASSWORD);
+        _renameStoreButton = makeButton(hbox, RENAME_STORE_BUTTON_TEXT, KeyEvent.VK_N,          ButtonAction.RENAME_STORE);
+        box.add(hbox);
 
         return box;
     }
