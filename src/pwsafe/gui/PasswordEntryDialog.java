@@ -3,6 +3,7 @@ package pwsafe.gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
@@ -33,20 +34,28 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
 
     private static final String OK_BUTTON_TEXT = "OK";
     private static final String CANCEL_BUTTON_TEXT = "Cancel";
-
-    private static final String BUTTON_OK = "ok";
-    private static final String BUTTON_CANCEL = "cancel";
+    private static final String SHOW_PASSWORDS_BUTTON_TEXT = "Reveal";
+    private static final String HIDE_PASSWORDS_BUTTON_TEXT = "Hide";
 
     private static final int PASSWORD_FIELD_COLUMNS = 20;
 
     private boolean _ok = false;
     private boolean _multipleEntry;
+    private boolean _passwordPlaintextVisible = false;
     private char[] _password;
     private JPasswordField _passwordField1;
     private JPasswordField _passwordField2;
     private JPasswordField _passwordField3;
+    private JButton _showOrHidePasswordsButton;
     private JButton _okButton;
     private JButton _cancelButton;
+
+// Action commands
+    private static enum ButtonAction {
+        OK,
+        CANCEL,
+        SHOW_HIDE_PASSWORDS
+    }
 
     /**
      * Construct a PasswordEntryDialog
@@ -74,6 +83,8 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
 
         mainContentPane.add(createPasswordFieldsPanel(), BorderLayout.CENTER);
 
+        mainContentPane.add(createGeneratorPanel(), BorderLayout.EAST);
+
         mainContentPane.add(createButtonsPanel(), BorderLayout.SOUTH);
 
         setContentPane(mainContentPane);
@@ -90,7 +101,7 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
         GridBagConstraints c = new GridBagConstraints();
 
         c.weightx = 0.0;
-        c.weighty = 1.0;
+        c.weighty = 0.0;
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
@@ -116,6 +127,7 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
         c.gridx++;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1.0;
+        c.weighty = 1.0;
         c.insets = new Insets(0, 2, 0, 2);
         _passwordField1 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
         gridbag.setConstraints(_passwordField1, c);
@@ -133,29 +145,52 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
             panel.add(_passwordField3);
         }
 
+        c.gridx++;
+        c.gridy = 0;
+        c.fill = GridBagConstraints.NONE;
+        c.weightx = 0.0;
+        c.weighty = 0.0;
+        c.gridheight = 3;
+        c.insets = new Insets(0, 0, 0, 0);
+        _showOrHidePasswordsButton = makeButton(panel, SHOW_PASSWORDS_BUTTON_TEXT, KeyEvent.VK_R, ButtonAction.SHOW_HIDE_PASSWORDS);
+        // _showOrHidePasswordsButton.setMinimumSize(new Dimension(200, 0));
+        gridbag.setConstraints(_showOrHidePasswordsButton, c);
+
         panel.setBorder(BorderFactory.createLineBorder(Color.black));
         return panel;
     }
 
+    private Component createGeneratorPanel() {
+        Box box = Box.createVerticalBox();
+        box.setBorder(BorderFactory.createLineBorder(Color.black));
+
+        // TODO: random password generation
+
+        return box;
+    }
+
     private Component createButtonsPanel() {
-        _okButton = new JButton(OK_BUTTON_TEXT);
-        _okButton.setMnemonic(KeyEvent.VK_O);
-        _okButton.setActionCommand(BUTTON_OK);
-
-        _cancelButton = new JButton(CANCEL_BUTTON_TEXT);
-        _cancelButton.setMnemonic(KeyEvent.VK_O);
-        _cancelButton.setActionCommand(BUTTON_CANCEL);
-
         Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        for (JButton b : new JButton[] {_okButton, _cancelButton}) {
-            b.setAlignmentX(Component.CENTER_ALIGNMENT);
-            b.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
-            b.addActionListener(this);
-            box.add(b);
-        }
+        _okButton     = makeButton(box, OK_BUTTON_TEXT,     KeyEvent.VK_O,      ButtonAction.OK);
+        _cancelButton = makeButton(box, CANCEL_BUTTON_TEXT, KeyEvent.VK_ESCAPE, ButtonAction.CANCEL);
+
         return box;
+    }
+
+    private void setPasswordPlaintextVisible(boolean visible) {
+        _passwordPlaintextVisible = visible;
+
+        _showOrHidePasswordsButton.setText(visible ? HIDE_PASSWORDS_BUTTON_TEXT
+                                                   : SHOW_PASSWORDS_BUTTON_TEXT);
+        _showOrHidePasswordsButton.setMnemonic(visible ? KeyEvent.VK_H : KeyEvent.VK_S);
+
+        _passwordField1.setEchoChar(visible ? ((char) 0) : '*');
+        if (_multipleEntry) {
+            _passwordField2.setEchoChar(visible ? ((char) 0) : '*');
+            _passwordField3.setEchoChar(visible ? ((char) 0) : '*');
+        }
     }
 
     private boolean confirmMatch() {
@@ -174,6 +209,19 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
         }
     }
 
+    private JButton makeButton(Container container, String text, int mnemonic, ButtonAction action) {
+        JButton button = new JButton(text);
+        if (mnemonic != -1) {
+            button.setMnemonic(mnemonic);
+        }
+        button.setActionCommand(action.name());
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
+        button.addActionListener(this);
+        container.add(button);
+        return button;
+    }
+
     public char[] showDialog() {
         setVisible(true);
         // It's modal, so when setVisible returns, user interaction has finished
@@ -186,7 +234,9 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
      * Implementation of ActionListener
      */
     public void actionPerformed(ActionEvent e) {
-        if (BUTTON_OK.equals(e.getActionCommand())) {
+        ButtonAction action = ButtonAction.valueOf(e.getActionCommand());
+        switch (action) {
+        case OK:
             if (confirmMatch()) {
                 _password = _passwordField1.getPassword();
                 _ok = true;
@@ -195,9 +245,16 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
             } else {
                 JOptionPane.showMessageDialog(this, "The entered passwords do not match");
             }
-        } else if (BUTTON_CANCEL.equals(e.getActionCommand())) {
+            break;
+        case CANCEL:
             setVisible(false);
             dispose();
+            break;
+        case SHOW_HIDE_PASSWORDS:
+            setPasswordPlaintextVisible(!_passwordPlaintextVisible);
+            break;
+        default:
+            break;
         }
     }
 
