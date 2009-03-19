@@ -8,6 +8,8 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -71,6 +73,7 @@ public class MainWindow extends JFrame implements ActionListener {
     // Entry editing
     private static final String SHOW_ENTRY_PASSWORD_BUTTON_TEXT = "Show";
     private static final String HIDE_ENTRY_PASSWORD_BUTTON_TEXT = "Hide";
+    private static final String COPY_ENTRY_PASSWORD_BUTTON_TEXT = "Copy";
 
     private static final int PASSWORD_FIELD_COLUMNS = 10;
 
@@ -89,7 +92,8 @@ public class MainWindow extends JFrame implements ActionListener {
         REMOVE_ENTRY,
         SAVE_ENTRY,
         DISCARD_ENTRY,
-        SHOW_OR_HIDE_ENTRY_PASSWORD
+        SHOW_OR_HIDE_ENTRY_PASSWORD,
+        COPY_ENTRY_PASSWORD
     }
 
 // Underlying data store
@@ -117,6 +121,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private JPasswordField _entryPasswordField;
     private JTextArea _entryAdditionalInfoField;
     private JButton _showOrHideEntryPasswordButton;
+    private JButton _copyEntryPasswordButton;
     private JButton _saveEntryButton;
     private JButton _discardEntryButton;
 
@@ -267,6 +272,8 @@ public class MainWindow extends JFrame implements ActionListener {
 
         _showOrHideEntryPasswordButton = makeButton(box, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_S,
                 ButtonAction.SHOW_OR_HIDE_ENTRY_PASSWORD);
+        _copyEntryPasswordButton = makeButton(box, COPY_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_C,
+                ButtonAction.COPY_ENTRY_PASSWORD);
 
         return box;
     }
@@ -287,6 +294,7 @@ public class MainWindow extends JFrame implements ActionListener {
         _saveEntryButton.setEnabled(enabled);
         _discardEntryButton.setEnabled(enabled);
         _showOrHideEntryPasswordButton.setEnabled(enabled);
+        _copyEntryPasswordButton.setEnabled(enabled);
     }
 
     private void setPasswordStoreEntryPasswordPlaintextVisible(boolean visible) {
@@ -548,6 +556,24 @@ public class MainWindow extends JFrame implements ActionListener {
         }
     }
 
+    private void copySelectedEntryPassword() {
+        PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
+        assert (entry != null);
+        Clipboard cb = getToolkit().getSystemClipboard();
+        try {
+            // Copy from the field rather than the entry, in case it has been edited or is new
+            char[] password = _entryPasswordField.getPassword();
+            StringSelection ss = new StringSelection(password == null ? "" : new String(password));
+            // No choice but to allocate as a String, but that's now a fairly minor concern since we're exposing
+            // to other apps in the clipboard
+            cb.setContents(ss, ss);
+        } catch (IllegalStateException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to access clipboard:\n" + e.toString());
+            return;
+        }
+    }
+
     private void removeSelectedEntry(PasswordStoreEntry entry) {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         assert (store != null && !store.isLocked());
@@ -735,6 +761,9 @@ public class MainWindow extends JFrame implements ActionListener {
             break;
         case SHOW_OR_HIDE_ENTRY_PASSWORD:
             setPasswordStoreEntryPasswordPlaintextVisible(!_entryPasswordPlaintextVisible);
+            break;
+        case COPY_ENTRY_PASSWORD:
+            copySelectedEntryPassword();
             break;
         default:
             break;
