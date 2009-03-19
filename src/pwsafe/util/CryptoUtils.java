@@ -27,7 +27,7 @@ public final class CryptoUtils {
     private CryptoUtils() {}
 
 
-    private static final long PASSWORD_HASH_ITERATION_TIME_MILLIS = 1 * 1000; // min time to hash when encrypting
+    private static final long PASSWORD_HASH_ITERATION_TIME_MILLIS = 500; // min time to hash when encrypting
     private static final int PASSWORD_SALT_LENGTH_BYTES = 32; // 256-bit
     private static final int NONCE_LENGTH_BYTES         = 32; // 256-bit
     private static final int MAC_LENGTH_BYTES           = 16; // 128-bit - this EAX impl can't do > cipher block size
