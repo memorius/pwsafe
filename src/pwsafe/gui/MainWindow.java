@@ -80,8 +80,7 @@ public class MainWindow extends JFrame implements ActionListener {
 // Action commands
     private static enum ButtonAction {
         // Store list
-        UNLOCK_STORE,
-        LOCK_STORE,
+        LOCK_OR_UNLOCK_STORE,
         CHANGE_STORE_PASSWORD,
         RENAME_STORE,
         ADD_STORE,
@@ -102,10 +101,9 @@ public class MainWindow extends JFrame implements ActionListener {
 
 // Store list
     private JList _storeList;
-    private JButton _unlockStoreButton;
+    private JButton _lockOrUnlockStoreButton;
     private JButton _changeStorePasswordButton;
     private JButton _renameStoreButton;
-    private JButton _lockStoreButton;
     private JButton _addStoreButton;
     private JButton _removeStoreButton;
 
@@ -401,7 +399,7 @@ public class MainWindow extends JFrame implements ActionListener {
                         int index = _storeList.locationToIndex(e.getPoint());
                         PasswordStore store = (PasswordStore) _storeList.getModel().getElementAt(index);
                         if (store != null && store.isLocked()) {
-                            unlockSelectedStore();
+                            unlockStore(store);
                         }
                     }
                 }
@@ -428,13 +426,12 @@ public class MainWindow extends JFrame implements ActionListener {
         Box box = Box.createVerticalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _unlockStoreButton = makeButton(box, UNLOCK_STORE_BUTTON_TEXT, KeyEvent.VK_U,        ButtonAction.UNLOCK_STORE);
+        _lockOrUnlockStoreButton = makeButton(box, UNLOCK_STORE_BUTTON_TEXT, KeyEvent.VK_U,    ButtonAction.LOCK_OR_UNLOCK_STORE);
         _changeStorePasswordButton =
                              makeButton(box, CHANGE_STORE_PASSWORD_BUTTON_TEXT, KeyEvent.VK_P, ButtonAction.CHANGE_STORE_PASSWORD);
-        _renameStoreButton = makeButton(box, RENAME_STORE_BUTTON_TEXT, KeyEvent.VK_R,        ButtonAction.RENAME_STORE);
-        _lockStoreButton   = makeButton(box, LOCK_STORE_BUTTON_TEXT,   KeyEvent.VK_L,        ButtonAction.LOCK_STORE);
-        _addStoreButton    = makeButton(box, ADD_STORE_BUTTON_TEXT,    -1,                   ButtonAction.ADD_STORE);
-        _removeStoreButton = makeButton(box, REMOVE_STORE_BUTTON_TEXT, -1,                   ButtonAction.REMOVE_STORE);
+        _renameStoreButton = makeButton(box, RENAME_STORE_BUTTON_TEXT, KeyEvent.VK_R,          ButtonAction.RENAME_STORE);
+        _addStoreButton    = makeButton(box, ADD_STORE_BUTTON_TEXT,    -1,                     ButtonAction.ADD_STORE);
+        _removeStoreButton = makeButton(box, REMOVE_STORE_BUTTON_TEXT, -1,                     ButtonAction.REMOVE_STORE);
 
         return box;
     }
@@ -454,9 +451,17 @@ public class MainWindow extends JFrame implements ActionListener {
         setPasswordStoreListButtonsEnabled(false);
     }
 
-    private void unlockSelectedStore() {
+    private void lockOrUnlockSelectedStore() {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         assert (store != null);
+        if (store.isLocked()) {
+            unlockStore(store);
+        } else {
+            lockStore(store);
+        }
+    }
+
+    private void unlockStore(PasswordStore store) {
         assert (store.isLocked());
         // Prompt for store password
         PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter store unlock password", false);
@@ -482,9 +487,7 @@ public class MainWindow extends JFrame implements ActionListener {
         reloadPasswordStoreEntryList(null);
     }
 
-    private void lockSelectedStore() {
-        PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
-        assert (store != null);
+    private void lockStore(PasswordStore store) {
         assert (!store.isLocked());
         try {
             store.lock();
@@ -643,8 +646,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private void enableStoreListAndButtons() {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         if (store == null) {
-            _unlockStoreButton.setEnabled(false);
-            _lockStoreButton.setEnabled(false);
+            _lockOrUnlockStoreButton.setEnabled(false);
             _changeStorePasswordButton.setEnabled(false);
             _renameStoreButton.setEnabled(false);
             _removeStoreButton.setEnabled(false);
@@ -652,8 +654,9 @@ public class MainWindow extends JFrame implements ActionListener {
         } else {
             boolean isLocked = store.isLocked();
             boolean hasKey = store.hasKey();
-            _unlockStoreButton.setEnabled(isLocked);
-            _lockStoreButton.setEnabled(hasKey);
+            _lockOrUnlockStoreButton.setEnabled(isLocked || hasKey);
+            _lockOrUnlockStoreButton.setText(isLocked ? UNLOCK_STORE_BUTTON_TEXT : LOCK_STORE_BUTTON_TEXT);
+            _lockOrUnlockStoreButton.setMnemonic(isLocked ? KeyEvent.VK_U : KeyEvent.VK_L);
             _changeStorePasswordButton.setEnabled(!isLocked);
             _changeStorePasswordButton.setText((isLocked || hasKey) ? CHANGE_STORE_PASSWORD_BUTTON_TEXT
                                                                     : SET_STORE_PASSWORD_BUTTON_TEXT);
@@ -689,10 +692,9 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private void setPasswordStoreListButtonsEnabled(boolean enabled) {
         _storeList.setEnabled(enabled);
-        _unlockStoreButton.setEnabled(enabled);
+        _lockOrUnlockStoreButton.setEnabled(enabled);
         _changeStorePasswordButton.setEnabled(enabled);
         _renameStoreButton.setEnabled(enabled);
-        _lockStoreButton.setEnabled(enabled);
         _addStoreButton.setEnabled(enabled);
         _removeStoreButton.setEnabled(enabled);
     }
@@ -735,11 +737,8 @@ public class MainWindow extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         ButtonAction action = ButtonAction.valueOf(e.getActionCommand());
         switch (action) {
-        case UNLOCK_STORE:
-            unlockSelectedStore();
-            break;
-        case LOCK_STORE:
-            lockSelectedStore();
+        case LOCK_OR_UNLOCK_STORE:
+            lockOrUnlockSelectedStore();
             break;
         case CHANGE_STORE_PASSWORD:
             changeSelectedStorePassword();
