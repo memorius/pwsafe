@@ -706,10 +706,18 @@ public class MainWindow extends JFrame implements ActionListener {
         if (entry == null) {
             assert (!saveEdits);
         } else if (saveEdits) {
-            entry.setDisplayName(_entryNameField.getText());
-            entry.setUserID(_entryUserIDField.getText());
-            entry.setPassword(_entryPasswordField.getPassword());
-            entry.setAdditionalInfo(_entryAdditionalInfoField.getText().toCharArray());
+            // Only the entry name is required, other fields can be set to empty / null
+            String entryName = _entryNameField.getText();
+            if (entryName != null) {
+                entryName = entryName.trim();
+            }
+            if (entryName == null || "".equals(entryName)) {
+                entryName = entry.getDisplayName();
+            }
+            entry.setAllFields(entryName,
+                               _entryUserIDField.getText(),
+                               _entryPasswordField.getPassword(),
+                               _entryAdditionalInfoField.getText().toCharArray());
         } else if (_isNewEntry) {
             // Discarding newly-added entry, remove completely
             removeSelectedEntry(entry);

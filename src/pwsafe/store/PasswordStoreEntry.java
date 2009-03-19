@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Date;
 
 /**
  * A single account record.
@@ -40,9 +41,13 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     private transient boolean _destroyed = false;
 
     private String _displayName;
+    private Date _entryCreated;
     private String _userID;
+    private Date _userIDLastChanged;
     private char[] _password;
+    private Date _passwordLastChanged;
     private char[] _additionalInfo;
+    private Date _additionalInfoLastChanged;
 
     /**
      * Construct a PasswordStoreEntry
@@ -65,11 +70,39 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
             final String userID,
             final char[] password,
             final char[] additionalInfo) {
+        final Date now = new Date();
         checkDisplayName(displayName);
+        _entryCreated = now;
         _displayName = displayName;
         _userID = userID;
+        _userIDLastChanged = now;
         _password = password;
+        _passwordLastChanged = now;
         _additionalInfo = additionalInfo;
+        _additionalInfoLastChanged = now;
+    }
+
+    /**
+     * Save all fields at once, with the same timestamp for any modified fields.
+     *
+     * @param displayName name to appear in list of entries, typically a website address or company name,
+     *         must not be null or empty
+     * @param userID the account username / login name, can be null or empty
+     * @param password the account password, can be null or empty
+     * @param additionalInfo free-form text to record any extra login info for this account,
+     *         e.g. additional security questions, can be null or empty
+     * @throws IllegalArgumentException if displayName is null or empty
+     */
+    public void setAllFields(final String displayName,
+                             final String userID,
+                             final char[] password,
+                             final char[] additionalInfo) {
+        checkNotDestroyed();
+        final Date now = new Date();
+        setDisplayName(displayName);
+        setUserID(userID, now);
+        setPassword(password, now);
+        setAdditionalInfo(additionalInfo, now);
     }
 
     /**
@@ -93,6 +126,23 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
         }
     }
 
+    private boolean stringsEqual(String s1, String s2) {
+        if (s1 == null) {
+            return (s2 == null);
+        } else {
+            return s1.equals(s2);
+        }
+    }
+
+    /**
+     * Get the date and time which this record was first created.
+     *
+     * @return date and time, never null.
+     */
+    public Date getEntryCreated() {
+        return (Date) _entryCreated.clone();
+    }
+
     /**
      * Get the display name for this record, to appear in list of password store entries.
      * This is typically a website address or company name.
@@ -110,7 +160,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      * @param displayName the new display name, must not be null or empty
      * @throws IllegalArgumentException if displayName is null or empty
      */
-    public void setDisplayName(String displayName) {
+    private void setDisplayName(String displayName) {
         checkDisplayName(displayName);
         _displayName = displayName;
     }
@@ -128,16 +178,30 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      * Set the account username / login name for this record.
      *
      * @param userID the new account username / login name, can be null or empty
+     * @param savedTime when the change was saved
      */
-    public void setUserID(String userID) {
+    private void setUserID(String userID, Date savedTime) {
+        if (!stringsEqual(userID, _userID)) {
+            _userIDLastChanged = savedTime;
+        }
         _userID = userID;
+    }
+
+    /**
+     * Get the date and time which the userID field was last changed,
+     * or the initial entry creation time if never changed.
+     *
+     * @return date and time, never null.
+     */
+    public Date getUserIDLastChanged() {
+        return (Date) _userIDLastChanged.clone();
     }
 
     /**
      * Get the account password (secret) for this record, if any.
      * <p>
      * <b>IMPORTANT:</b> this returns the internal array itself, not a copy,
-     * so any modifications to the array will be written back to the store with this entry.
+     * so any modifications to the array will be written back to the store with this record.
      * <p>
      * For security, caller should avoid storing references longer than necessary,
      * and if the caller copies the data, it MUST ensure it is zero-overwritten and discarded when finished.
@@ -162,19 +226,34 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      * this PasswordStoreEntry object assumes responsibility for clearing and discarding the secret data.
      *
      * @param password the new password (plaintext), can be null or empty
+     * @param savedTime when the change was saved
      * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
-    public void setPassword(char[] password) {
+    private void setPassword(char[] password, Date savedTime) {
         checkNotDestroyed();
+        boolean changed = !Arrays.equals(password, _password);
         clearPassword();
         _password = password;
+        if (changed) {
+            _passwordLastChanged = savedTime;
+        }
+    }
+
+    /**
+     * Get the date and time which the password field was last changed,
+     * or the initial entry creation time if never changed.
+     *
+     * @return date and time, never null.
+     */
+    public Date getPasswordLastChanged() {
+        return (Date) _passwordLastChanged.clone();
     }
 
     /**
      * Get the additional login info (secret) for this record, if any.
      * <p>
      * <b>IMPORTANT:</b> this returns the internal array itself, not a copy,
-     * so any modifications to the array will be written back to the store with this entry.
+     * so any modifications to the array will be written back to the store with this record.
      * <p>
      * For security, caller should avoid storing references longer than necessary,
      * and if the caller copies the data, it MUST ensure it is zero-overwritten and discarded when finished.
@@ -199,12 +278,27 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      * this PasswordStoreEntry object assumes responsibility for clearing and discarding the secret data.
      *
      * @param additionalInfo the new additional login info (plaintext), can be null or empty
+     * @param savedTime when the change was saved
      * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
-    public void setAdditionalInfo(char[] additionalInfo) {
+    private void setAdditionalInfo(char[] additionalInfo, Date savedTime) {
         checkNotDestroyed();
+        boolean changed = !Arrays.equals(additionalInfo, _additionalInfo);
         clearAdditionalInfo();
         _additionalInfo = additionalInfo;
+        if (changed) {
+            _additionalInfoLastChanged = savedTime;
+        }
+    }
+
+    /**
+     * Get the date and time which the additional info field was last changed,
+     * or the initial entry creation time if never changed.
+     *
+     * @return date and time, never null.
+     */
+    public Date getAdditionalInfoLastChanged() {
+        return (Date) _additionalInfoLastChanged.clone();
     }
 
     /**
@@ -333,9 +427,13 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
         /* For backward-compatible deserialization, change only the part below, and change VERSION value at top of file,
            and change readObject to support both old and new */
         out.writeObject(_displayName);
+        out.writeObject(_entryCreated);
         out.writeObject(_userID);
+        out.writeObject(_userIDLastChanged);
         out.writeObject(_password);
+        out.writeObject(_passwordLastChanged);
         out.writeObject(_additionalInfo);
+        out.writeObject(_additionalInfoLastChanged);
     }
 
     /**
@@ -357,10 +455,14 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
 
     private void readObjectVersion1(ObjectInputStream in) throws IOException, ClassNotFoundException {
         _destroyed = false;
-        _displayName    = (String) in.readObject();
-        _userID         = (String) in.readObject();
-        _password       = (char[]) in.readObject();
-        _additionalInfo = (char[]) in.readObject();
+        _displayName               = (String) in.readObject();
+        _entryCreated              = (Date)   in.readObject();
+        _userID                    = (String) in.readObject();
+        _userIDLastChanged         = (Date)   in.readObject();
+        _password                  = (char[]) in.readObject();
+        _passwordLastChanged       = (Date)   in.readObject();
+        _additionalInfo            = (char[]) in.readObject();
+        _additionalInfoLastChanged = (Date)   in.readObject();
     }
 
     /**
