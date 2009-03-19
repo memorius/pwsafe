@@ -156,8 +156,8 @@ public class MainWindow extends JFrame implements ActionListener {
         JPanel mainContentPane = new JPanel(new BorderLayout());
         mainContentPane.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        mainContentPane.add(createPasswordStoreListPanel(), BorderLayout.WEST);
-        mainContentPane.add(createPasswordStoreContentsPanel(), BorderLayout.CENTER);
+        mainContentPane.add(createPasswordStoreListAndEntryListPanel(), BorderLayout.WEST);
+        mainContentPane.add(createPasswordStoreEntryPanel(), BorderLayout.CENTER);
         // TODO: mainContentPane.add(createSaveLoadCancelButtonPanel(), BorderLayout.SOUTH);
 
         setContentPane(mainContentPane);
@@ -171,15 +171,12 @@ public class MainWindow extends JFrame implements ActionListener {
         pack();
     }
 
-    /**
-     * Contents of the currently-selected store
-     */
-    private Component createPasswordStoreContentsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createLineBorder(Color.black));
-        panel.add(createPasswordStoreEntryListPanel(), BorderLayout.WEST);
-        panel.add(createPasswordStoreEntryPanel(), BorderLayout.CENTER);
-        return panel;
+    private Component createPasswordStoreListAndEntryListPanel() {
+        Box box = Box.createHorizontalBox();
+        box.setBorder(BorderFactory.createLineBorder(Color.black));
+        box.add(createPasswordStoreListPanel());
+        box.add(createPasswordStoreEntryListPanel());
+        return box;
     }
 
     private Component createPasswordStoreEntryPanel() {
@@ -197,10 +194,11 @@ public class MainWindow extends JFrame implements ActionListener {
         GridBagConstraints c = new GridBagConstraints();
 
         c.weightx = 0.0;
-        c.weighty = 1.0;
+        c.weighty = 0.0;
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
+        c.anchor = GridBagConstraints.CENTER;
 
         JLabel label = new JLabel("Name:");
         gridbag.setConstraints(label, c);
@@ -219,6 +217,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridheight = 1;
 
         c.gridy += 2;
+        c.anchor = GridBagConstraints.NORTH;
         label = new JLabel("Additional info:");
         gridbag.setConstraints(label, c);
         panel.add(label);
@@ -227,7 +226,8 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridx++;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1.0;
-        c.insets = new Insets(0, 2, 0, 2);
+        c.insets = new Insets(2, 2, 2, 2);
+        c.anchor = GridBagConstraints.CENTER;
 
         _entryNameField = new JTextField();
         gridbag.setConstraints(_entryNameField, c);
@@ -254,6 +254,7 @@ public class MainWindow extends JFrame implements ActionListener {
         setPasswordStoreEntryPasswordPlaintextVisible(false);
 
         c.gridy++;
+        c.weighty = 1.0;
         c.fill = GridBagConstraints.BOTH;
         _entryAdditionalInfoField = new JTextArea();
         _entryAdditionalInfoField.setLineWrap(false);
