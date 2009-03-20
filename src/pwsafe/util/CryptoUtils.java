@@ -228,6 +228,18 @@ public final class CryptoUtils {
     }
 
     /**
+     * Get a random number 0 <= value < n
+     *
+     * @param n the bound on the random number to be returned. Must be positive.
+     * @return a pseudorandom, uniformly distributed int  value between 0 (inclusive) and n (exclusive).
+     * @throws IllegalArgumentException if n is not positive.
+     * @see java.util.Random#nextInt(int)
+     */
+    public static int randomInt(int n) {
+        return RANDOM.nextInt(n);
+    }
+
+    /**
      * Hash the password with the specified salt, then re-hash for the specified number of iterations.
      * Used during decryption.
      * <p>
