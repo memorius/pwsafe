@@ -16,6 +16,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -116,10 +119,14 @@ public class MainWindow extends JFrame implements ActionListener {
     private JButton _removeEntryButton;
 
 // Entry editing
+    private JLabel _entryCreatedField;
     private JTextField _entryNameField;
     private JTextField _entryUserIDField;
+    private JLabel _entryUserIDLastChangedField;
     private JPasswordField _entryPasswordField;
+    private JLabel _entryPasswordLastChangedField;
     private JTextArea _entryAdditionalInfoField;
+    private JLabel _entryAdditionalInfoLastChangedField;
     private JButton _changeEntryPasswordButton;
     private JButton _showOrHideEntryPasswordButton;
     private JButton _copyEntryPasswordButton;
@@ -194,65 +201,105 @@ public class MainWindow extends JFrame implements ActionListener {
         JPanel panel = new JPanel(gridbag);
         GridBagConstraints c = new GridBagConstraints();
 
+        // Column 1
         c.weightx = 0.0;
         c.weighty = 0.0;
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
-        c.anchor = GridBagConstraints.CENTER;
+        c.anchor = GridBagConstraints.WEST;
 
+        c.gridheight = 2;
         JLabel label = new JLabel("Name:");
         gridbag.setConstraints(label, c);
         panel.add(label);
+        c.gridy += 2;
 
-        c.gridy++;
+        c.gridheight = 2;
         label = new JLabel("User ID:");
         gridbag.setConstraints(label, c);
         panel.add(label);
+        c.gridy += 2;
 
-        c.gridy++;
-        c.gridheight = 2;
+        c.gridheight = 3;
         label = new JLabel("Password:");
         gridbag.setConstraints(label, c);
         panel.add(label);
-        c.gridheight = 1;
+        c.gridy += 3;
 
-        c.gridy += 2;
-        c.anchor = GridBagConstraints.NORTH;
+        c.gridheight = 2;
         label = new JLabel("Additional info:");
         gridbag.setConstraints(label, c);
         panel.add(label);
 
+        // Column 2
         c.gridy = 0;
         c.gridx++;
-        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridheight = 1;
         c.weightx = 1.0;
         c.insets = new Insets(2, 2, 2, 2);
-        c.anchor = GridBagConstraints.CENTER;
 
+        c.gridwidth = 2;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
         _entryNameField = new JTextField();
         gridbag.setConstraints(_entryNameField, c);
         panel.add(_entryNameField);
-
         c.gridy++;
+
+        c.gridwidth = 1;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.NONE;
+        label = new JLabel("Created:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.gridwidth = 2;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
         _entryUserIDField = new JTextField();
         gridbag.setConstraints(_entryUserIDField, c);
         panel.add(_entryUserIDField);
-
         c.gridy++;
+
+        c.gridwidth = 1;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.NONE;
+        label = new JLabel("Changed:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.gridwidth = 2;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
         _entryPasswordField = new JPasswordField(PASSWORD_FIELD_COLUMNS);
         _entryPasswordField.setEditable(false);
         gridbag.setConstraints(_entryPasswordField, c);
         panel.add(_entryPasswordField);
-
         c.gridy++;
+
+        c.gridwidth = 1;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.NONE;
+        label = new JLabel("Changed:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.gridwidth = 2;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
         Component passwordFieldButtons = createPasswordStoreEntryPasswordFieldButtons();
         gridbag.setConstraints(passwordFieldButtons, c);
         panel.add(passwordFieldButtons);
         setPasswordStoreEntryPasswordPlaintextVisible(false);
-
         c.gridy++;
+
+        c.gridwidth = 2;
         c.weighty = 1.0;
+        c.anchor = GridBagConstraints.WEST;
         c.fill = GridBagConstraints.BOTH;
         _entryAdditionalInfoField = new JTextArea();
         _entryAdditionalInfoField.setLineWrap(false);
@@ -260,6 +307,47 @@ public class MainWindow extends JFrame implements ActionListener {
         JScrollPane scrollPane = new JScrollPane(_entryAdditionalInfoField);
         gridbag.setConstraints(scrollPane, c);
         panel.add(scrollPane);
+        c.gridy++;
+
+        c.gridwidth = 1;
+        c.weighty = 0.0;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.NONE;
+        label = new JLabel("Changed:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+
+        // Column 3
+        c.gridy = 0;
+        c.weighty = 0.0;
+        c.gridx++;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridy++;
+
+        c.gridwidth = 1;
+        _entryCreatedField = new JLabel(" ");
+        gridbag.setConstraints(_entryCreatedField, c);
+        panel.add(_entryCreatedField);
+        c.gridy += 2;
+
+        c.gridwidth = 1;
+        _entryUserIDLastChangedField = new JLabel(" ");
+        gridbag.setConstraints(_entryUserIDLastChangedField, c);
+        panel.add(_entryUserIDLastChangedField);
+        c.gridy += 2;
+
+        c.gridwidth = 1;
+        _entryPasswordLastChangedField = new JLabel(" ");
+        gridbag.setConstraints(_entryPasswordLastChangedField, c);
+        panel.add(_entryPasswordLastChangedField);
+        c.gridy += 3;
+
+        c.gridwidth = 1;
+        _entryAdditionalInfoLastChangedField = new JLabel(" ");
+        gridbag.setConstraints(_entryAdditionalInfoLastChangedField, c);
+        panel.add(_entryAdditionalInfoLastChangedField);
 
         panel.setBorder(BorderFactory.createLineBorder(Color.black));
         return panel;
@@ -280,10 +368,14 @@ public class MainWindow extends JFrame implements ActionListener {
     }
 
     private void clearPasswordStoreEntryEditFields() {
+        _entryCreatedField.setText(null);
         _entryNameField.setText(null);
         _entryUserIDField.setText(null);
+        _entryUserIDLastChangedField.setText(null);
         _entryPasswordField.setText(null);
+        _entryPasswordLastChangedField.setText(null);
         _entryAdditionalInfoField.setText(null);
+        _entryAdditionalInfoLastChangedField.setText(null);
         setPasswordStoreEntryPasswordPlaintextVisible(false);
     }
 
@@ -443,9 +535,20 @@ public class MainWindow extends JFrame implements ActionListener {
         return box;
     }
 
+    // Mon 1 Jan 2001 02:03
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy HH:mm");
+
+    private String formatDate(Date date) {
+        return DATE_FORMAT.format(date);
+    }
+
     private void viewSelectedEntry() {
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         assert (entry != null);
+        _entryCreatedField.setText(formatDate(entry.getEntryCreated()));
+        _entryUserIDLastChangedField.setText(formatDate(entry.getUserIDLastChanged()));
+        _entryPasswordLastChangedField.setText(formatDate(entry.getPasswordLastChanged()));
+        _entryAdditionalInfoLastChangedField.setText(formatDate(entry.getAdditionalInfoLastChanged()));
         _entryNameField.setText(entry.getDisplayName());
         _entryUserIDField.setText(entry.getUserID());
         char[] password = entry.getPassword();
