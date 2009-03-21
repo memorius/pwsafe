@@ -11,58 +11,87 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.ParseException;
 import java.util.Arrays;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JSpinner;
+import javax.swing.JSpinner.DefaultEditor;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import pwsafe.util.RandomPasswordGenerator;
 
 /**
  * Modal dialog prompting for a password, with optional multiple-confirm
  *
  * @author Nick Clarke
  */
-public class PasswordEntryDialog extends JDialog implements ActionListener {
+public class PasswordEntryDialog extends JDialog implements ActionListener, ItemListener, ChangeListener {
 
     private static final String OK_BUTTON_TEXT = "OK";
     private static final String CANCEL_BUTTON_TEXT = "Cancel";
     private static final String SHOW_PASSWORDS_BUTTON_TEXT = "Reveal";
     private static final String HIDE_PASSWORDS_BUTTON_TEXT = "Hide";
+    private static final String GENERATE_PASSWORD_BUTTON_TEXT = "Generate Password";
 
     private static final int PASSWORD_FIELD_COLUMNS = 20;
 
     private boolean _ok = false;
     private boolean _multipleEntry;
+    private RandomPasswordGenerator _randomPasswordGenerator = null;
     private boolean _passwordPlaintextVisible = false;
     private char[] _password;
     private JPasswordField _passwordField1;
-    private JPasswordField _passwordField2;
-    private JPasswordField _passwordField3;
+    private JPasswordField _passwordField2; // only if multipleEntry
+    private JPasswordField _passwordField3; // only if multipleEntry
     private JButton _showOrHidePasswordsButton;
     private JButton _okButton;
     private JButton _cancelButton;
+
+    // These fields are only set if _randomPasswordGenerator != null
+    private JSpinner _generatorLengthSpinner;
+    private JCheckBox _generatorUseLowercaseAlphaCheckbox;
+    private JCheckBox _generatorUseUppercaseAlphaCheckbox;
+    private JCheckBox _generatorUseDigitsCheckbox;
+    private JCheckBox _generatorUsePunctuationCheckbox;
+    private JLabel _generatorAlphabetSizeField;
+    private JLabel _generatorBitComplexityField;
+    private JButton _generatePasswordButton;
 
 // Action commands
     private static enum ButtonAction {
         OK,
         CANCEL,
-        SHOW_HIDE_PASSWORDS
+        SHOW_HIDE_PASSWORDS,
+        GENERATE_PASSWORD
     }
 
     /**
      * Construct a PasswordEntryDialog
      */
-    public PasswordEntryDialog(final Frame parent, final String title, final boolean multipleEntry) {
+    public PasswordEntryDialog(final Frame parent, final String title, final boolean multipleEntry,
+            final boolean showRandomPasswordGenerator) {
         super(parent, title, true);
         _multipleEntry = multipleEntry;
+        if (showRandomPasswordGenerator) {
+            _randomPasswordGenerator = new RandomPasswordGenerator();
+        }
         setup();
     }
 
@@ -83,7 +112,9 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
 
         mainContentPane.add(createPasswordFieldsPanel(), BorderLayout.CENTER);
 
-        mainContentPane.add(createGeneratorPanel(), BorderLayout.EAST);
+        if (_randomPasswordGenerator != null) {
+            mainContentPane.add(createGeneratorPanel(), BorderLayout.EAST);
+        }
 
         mainContentPane.add(createButtonsPanel(), BorderLayout.SOUTH);
 
@@ -103,6 +134,7 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
         c.weightx = 0.0;
         c.weighty = 0.0;
         c.fill = GridBagConstraints.NONE;
+        c.anchor = GridBagConstraints.WEST;
         c.gridx = 0;
         c.gridy = 0;
 
@@ -147,6 +179,7 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
 
         c.gridx++;
         c.gridy = 0;
+        c.anchor = GridBagConstraints.CENTER;
         c.fill = GridBagConstraints.NONE;
         c.weightx = 0.0;
         c.weighty = 0.0;
@@ -161,12 +194,208 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
     }
 
     private Component createGeneratorPanel() {
-        Box box = Box.createVerticalBox();
-        box.setBorder(BorderFactory.createLineBorder(Color.black));
+        GridBagLayout gridbag = new GridBagLayout();
+        JPanel panel = new JPanel(gridbag);
+        GridBagConstraints c = new GridBagConstraints();
 
-        // TODO: random password generation
+        // Column 1
+        c.weightx = 0.0;
+        c.weighty = 0.0;
+        c.gridx = 0;
+        c.gridy = 0;
 
-        return box;
+        c.gridwidth = 2;
+        c.fill = GridBagConstraints.NONE;
+        c.anchor = GridBagConstraints.CENTER;
+        JLabel label = new JLabel("Random password generator");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.fill = GridBagConstraints.NONE;
+
+        c.gridwidth = 1;
+        c.anchor = GridBagConstraints.WEST;
+        label = new JLabel("Length (characters):");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        label = new JLabel("Use lowercase alpha:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        label = new JLabel("Use uppercase alpha:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        label = new JLabel("Use numbers:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        label = new JLabel("Use punctuation:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        label = new JLabel("Alphabet size:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        label = new JLabel("Complexity (bits):");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.gridwidth = 2;
+        c.anchor = GridBagConstraints.CENTER;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        _generatePasswordButton = makeButton(panel, GENERATE_PASSWORD_BUTTON_TEXT, KeyEvent.VK_G,
+                ButtonAction.GENERATE_PASSWORD);
+        gridbag.setConstraints(_generatePasswordButton, c);
+        c.gridy++;
+
+        // Column 2
+        c.gridy = 0;
+        c.gridx++;
+        c.gridwidth = 1;
+        c.weightx = 1.0;
+
+        c.gridy++;
+
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.WEST;
+        SpinnerNumberModel spinnerModel = new SpinnerNumberModel(_randomPasswordGenerator.getLength(), 1, 10000, 1);
+        _generatorLengthSpinner = new JSpinner(spinnerModel);
+        _generatorLengthSpinner.addChangeListener(this);
+        gridbag.setConstraints(_generatorLengthSpinner, c);
+        panel.add(_generatorLengthSpinner);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        _generatorUseLowercaseAlphaCheckbox = new JCheckBox();
+        // _generatorUseLowercaseAlphaCheckbox.setMnemonic(KeyEvent.VK_C); 
+        _generatorUseLowercaseAlphaCheckbox.setSelected(_randomPasswordGenerator.getUseLowercaseAlpha());
+        _generatorUseLowercaseAlphaCheckbox.addItemListener(this);
+        gridbag.setConstraints(_generatorUseLowercaseAlphaCheckbox, c);
+        panel.add(_generatorUseLowercaseAlphaCheckbox);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        _generatorUseUppercaseAlphaCheckbox = new JCheckBox();
+        // _generatorUseUppercaseAlphaCheckbox.setMnemonic(KeyEvent.VK_C); 
+        _generatorUseUppercaseAlphaCheckbox.setSelected(_randomPasswordGenerator.getUseUppercaseAlpha());
+        _generatorUseUppercaseAlphaCheckbox.addItemListener(this);
+        gridbag.setConstraints(_generatorUseUppercaseAlphaCheckbox, c);
+        panel.add(_generatorUseUppercaseAlphaCheckbox);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        _generatorUseDigitsCheckbox = new JCheckBox();
+        // _generatorUseDigitsCheckbox.setMnemonic(KeyEvent.VK_C); 
+        _generatorUseDigitsCheckbox.setSelected(_randomPasswordGenerator.getUseDigits());
+        _generatorUseDigitsCheckbox.addItemListener(this);
+        gridbag.setConstraints(_generatorUseDigitsCheckbox, c);
+        panel.add(_generatorUseDigitsCheckbox);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        _generatorUsePunctuationCheckbox = new JCheckBox();
+        // _generatorUsePunctuationCheckbox.setMnemonic(KeyEvent.VK_C); 
+        _generatorUsePunctuationCheckbox.setSelected(_randomPasswordGenerator.getUsePunctuation());
+        _generatorUsePunctuationCheckbox.addItemListener(this);
+        gridbag.setConstraints(_generatorUsePunctuationCheckbox, c);
+        panel.add(_generatorUsePunctuationCheckbox);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        _generatorAlphabetSizeField = new JLabel();
+        gridbag.setConstraints(_generatorAlphabetSizeField, c);
+        panel.add(_generatorAlphabetSizeField);
+        c.gridy++;
+
+        c.anchor = GridBagConstraints.WEST;
+        _generatorBitComplexityField = new JLabel();
+        gridbag.setConstraints(_generatorBitComplexityField, c);
+        panel.add(_generatorBitComplexityField);
+        c.gridy++;
+
+        updateGeneratorComplexityFields();
+
+        panel.setBorder(BorderFactory.createLineBorder(Color.black));
+        return panel;
+    }
+
+    /**
+     * ItemListener implementation
+     */
+    public void itemStateChanged(ItemEvent e) {
+        Object source = e.getItemSelectable();
+        if (source == _generatorUseLowercaseAlphaCheckbox) {
+            _randomPasswordGenerator.setUseLowercaseAlpha(e.getStateChange() == ItemEvent.SELECTED);
+            updateGeneratorComplexityFields();
+        } else if (source == _generatorUseUppercaseAlphaCheckbox) {
+            _randomPasswordGenerator.setUseUppercaseAlpha(e.getStateChange() == ItemEvent.SELECTED);
+            updateGeneratorComplexityFields();
+        } else if (source == _generatorUseDigitsCheckbox) {
+            _randomPasswordGenerator.setUseDigits(e.getStateChange() == ItemEvent.SELECTED);
+            updateGeneratorComplexityFields();
+        } else if (source == _generatorUsePunctuationCheckbox) {
+            _randomPasswordGenerator.setUsePunctuation(e.getStateChange() == ItemEvent.SELECTED);
+            updateGeneratorComplexityFields();
+        }
+    }
+
+    /**
+     * ChangeListener implementation
+     */
+    public void stateChanged(ChangeEvent e) {
+        Object source = e.getSource();
+        if (source == _generatorLengthSpinner) {
+            _randomPasswordGenerator.setLength(getSpinnerIntValue(_generatorLengthSpinner));
+            updateGeneratorComplexityFields();
+        }
+    }
+
+    private void updateGeneratorComplexityFields() {
+        _generatorBitComplexityField.setText(Integer.toString(_randomPasswordGenerator.getBitComplexity()));
+        int alphabetSize = _randomPasswordGenerator.getAlphabetSize();
+        _generatorAlphabetSizeField.setText(Integer.toString(alphabetSize));
+        _generatePasswordButton.setEnabled(alphabetSize > 0);
+    }
+
+    private int getSpinnerIntValue(JSpinner spinner) {
+        try {
+            spinner.commitEdit();
+        } catch (ParseException e) {
+            // Edited value is invalid: revert to last valid value
+            ((DefaultEditor) spinner.getEditor()).getTextField().setValue(spinner.getValue());
+        }
+        return ((Integer) spinner.getValue()).intValue();
+    }
+
+    private void generatePassword() {
+        char[] password = _randomPasswordGenerator.generatePassword();
+        try {
+            String passwordString = new String(password);
+            _passwordField1.setText(passwordString);
+            if (_multipleEntry) {
+                _passwordField2.setText(passwordString);
+                _passwordField3.setText(passwordString);
+            }
+        } finally {
+            Arrays.fill(password, (char) 0);
+        }
     }
 
     private Component createButtonsPanel() {
@@ -252,6 +481,9 @@ public class PasswordEntryDialog extends JDialog implements ActionListener {
             break;
         case SHOW_HIDE_PASSWORDS:
             setPasswordPlaintextVisible(!_passwordPlaintextVisible);
+            break;
+        case GENERATE_PASSWORD:
+            generatePassword();
             break;
         default:
             break;

@@ -15,12 +15,13 @@ public class RandomPasswordGenerator {
     private static final String PUNCTUATION = "!@#$%^&*(){}[]<>,._-+=?/\\|;:'\"`~";
 
 
-    // Initial field values are the defaults for the 'generate password' dialog
+    // Initial field values are the defaults for the 'generate password' dialog.
+    // Everything enabled with 20 character length gives > 128 bit complexity.
     private boolean _useLowercaseAlpha = true;
     private boolean _useUppercaseAlpha = true;
     private boolean _useDigits = true;
     private boolean _usePunctuation = true;
-    private int _length = 12;
+    private int _length = 20;
 
     /**
      * Construct a RandomPasswordGenerator
@@ -87,7 +88,7 @@ public class RandomPasswordGenerator {
      *
      * @return number of different possible values per character with the currently-selected alphabet options, >= 0
      */
-    public int getRadix() {
+    public int getAlphabetSize() {
         return getAlphabet().length();
     }
 
@@ -112,7 +113,7 @@ public class RandomPasswordGenerator {
      * @return greatest power of 2 <= (radix to the power of getLength());
      */
     public int getBitComplexity() {
-        int radix = getRadix();
+        int radix = getAlphabetSize();
         if (radix == 0) {
             return 0;
         }
