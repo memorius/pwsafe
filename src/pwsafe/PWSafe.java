@@ -22,7 +22,7 @@ public class PWSafe {
     */
 
     private final File _datastoreFile;
-    private PasswordStoreList _passwordStores;
+    private PasswordStoreList _passwordStores = null;
 
     /**
      * Construct a PWSafe
@@ -46,6 +46,11 @@ public class PWSafe {
     }
 
     public void load() throws DatastoreFileException {
+        // Destroy any existing secrets first
+        if (_passwordStores != null) {
+            _passwordStores.destroySecrets();
+            _passwordStores = null;
+        }
         if (_datastoreFile.length() > 0) {
             byte[] serialized;
             try {

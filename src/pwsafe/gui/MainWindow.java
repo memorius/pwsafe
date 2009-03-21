@@ -39,6 +39,7 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import pwsafe.DatastoreFileException;
 import pwsafe.DecryptionException;
 import pwsafe.EncryptionException;
 import pwsafe.PWSafe;
@@ -59,6 +60,10 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String TITLE = "Password Safe";
     private static final String DEFAULT_NEW_ENTRY_NAME = "New entry";
     private static final String DEFAULT_NEW_STORE_NAME = "New store";
+    // Main save/load/cancel buttons
+    private static final String SAVE_TO_DISK_BUTTON_TEXT = "Save to disk";
+    private static final String RELOAD_FROM_DISK_BUTTON_TEXT = "Reload from disk";
+    private static final String EXIT_BUTTON_TEXT = "Exit";
     // Store list
     private static final String UNLOCK_STORE_BUTTON_TEXT = "Unlock";
     private static final String CHANGE_STORE_PASSWORD_BUTTON_TEXT = "Change password";
@@ -83,6 +88,10 @@ public class MainWindow extends JFrame implements ActionListener {
 
 // Action commands
     private static enum ButtonAction {
+        // Main buttons
+        SAVE_TO_DISK,
+        RELOAD_FROM_DISK,
+        EXIT,
         // Store list
         LOCK_OR_UNLOCK_STORE,
         CHANGE_STORE_PASSWORD,
@@ -103,6 +112,12 @@ public class MainWindow extends JFrame implements ActionListener {
 // Underlying data store
     private final PasswordStoreList _passwordStoreList;
     private final PWSafe _pwsafe;
+    private boolean _needsSaveToDisk = false;
+
+// Main save/load/cancel buttons
+    private JButton _saveToDiskButton;
+    private JButton _reloadFromDiskButton;
+    private JButton _exitButton;
 
 // Store list
     private JList _storeList;
@@ -166,7 +181,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
         mainContentPane.add(createPasswordStoreListAndEntryListPanel(), BorderLayout.WEST);
         mainContentPane.add(createPasswordStoreEntryPanel(), BorderLayout.CENTER);
-        // TODO: mainContentPane.add(createSaveLoadCancelButtonPanel(), BorderLayout.SOUTH);
+        mainContentPane.add(createSaveLoadCancelButtonPanel(), BorderLayout.SOUTH);
 
         setContentPane(mainContentPane);
 
@@ -177,6 +192,20 @@ public class MainWindow extends JFrame implements ActionListener {
 
         // Auto-size based on components
         pack();
+    }
+
+    private Component createSaveLoadCancelButtonPanel() {
+        Box box = Box.createHorizontalBox();
+        box.setBorder(BorderFactory.createLineBorder(Color.black));
+
+        _saveToDiskButton = makeButton(box, SAVE_TO_DISK_BUTTON_TEXT, -1 /* KeyEvent.VK_E*/,
+                ButtonAction.SAVE_TO_DISK);
+        _reloadFromDiskButton = makeButton(box, RELOAD_FROM_DISK_BUTTON_TEXT, -1 /* KeyEvent.VK_E*/,
+                ButtonAction.RELOAD_FROM_DISK);
+        _exitButton = makeButton(box, EXIT_BUTTON_TEXT, -1 /* KeyEvent.VK_E*/,
+                ButtonAction.EXIT);
+
+        return box;
     }
 
     private Component createPasswordStoreListAndEntryListPanel() {
@@ -440,14 +469,11 @@ public class MainWindow extends JFrame implements ActionListener {
             });
         _entryList.addListSelectionListener(new ListSelectionListener() {
                 public void valueChanged(ListSelectionEvent e) {
-                    // TODO: may want to veto the change if an entry is currently shown and has been edited
                     if (e.getValueIsAdjusting()) {
                         return; // Will get another event
                     }
                     // int index = e.getFirstIndex();
                     enableEntryListAndButtons();
-                    // TODO: need this, but must prevent it interacting with double-click 'viewSelectedEntry'
-                    // closeDisplayedEntry(false);
                 }
             });
         JScrollPane pane = new JScrollPane(_entryList);
@@ -500,7 +526,6 @@ public class MainWindow extends JFrame implements ActionListener {
             });
         _storeList.addListSelectionListener(new ListSelectionListener() {
                 public void valueChanged(ListSelectionEvent e) {
-                    // TODO: may want to veto the change if an entry is currently shown and has been edited
                     if (e.getValueIsAdjusting()) {
                         return; // Will get another event
                     }
@@ -586,13 +611,13 @@ public class MainWindow extends JFrame implements ActionListener {
             // Store is now responsible for the key - keeps it for locking again later
         } catch (DecryptionException e) {
             key.destroySecrets();
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this,
                     "Decryption failed - wrong password or corrupted file:\n" + e.toString());
             return;
         }
         // Successfully unlocked
         assert (!store.isLocked());
+        _needsSaveToDisk = true;
         reloadPasswordStoreList(store);
         reloadPasswordStoreEntryList(null);
     }
@@ -603,13 +628,13 @@ public class MainWindow extends JFrame implements ActionListener {
             store.lock();
             // Store is now responsible for the key - keeps it for locking again later
         } catch (EncryptionException e) {
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this,
                     "Encryption failed:\n" + e.toString());
             return;
         }
         // Successfully locked
         assert (store.isLocked());
+        _needsSaveToDisk = true;
         reloadPasswordStoreList(store);
         reloadPasswordStoreEntryList(null);
     }
@@ -626,6 +651,7 @@ public class MainWindow extends JFrame implements ActionListener {
         }
         // Update the store object - it will store the password for use when locking
         store.setKey(new EncryptionKey(password));
+        _needsSaveToDisk = true;
         // Reload list because it changes the status for new stores
         reloadPasswordStoreList(store);
     }
@@ -649,6 +675,7 @@ public class MainWindow extends JFrame implements ActionListener {
                 "Enter new name for store:", "Rename store", JOptionPane.QUESTION_MESSAGE);
         if (newStoreName != null && !"".equals(newStoreName)) {
             store.setStoreName(newStoreName);
+            _needsSaveToDisk = true;
             reloadPasswordStoreList(store);
         }
     }
@@ -662,6 +689,7 @@ public class MainWindow extends JFrame implements ActionListener {
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE)) {
             _passwordStoreList.removeStore(store);
+            _needsSaveToDisk = true;
             // TODO: select the next lowest entry rather than going back to the first
             reloadPasswordStoreList(null);
             reloadPasswordStoreEntryList(null);
@@ -708,6 +736,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private void addNewStore() {
         PasswordStore newStore = _passwordStoreList.addStore(DEFAULT_NEW_STORE_NAME);
+        _needsSaveToDisk = true;
         reloadPasswordStoreList(newStore);
         reloadPasswordStoreEntryList(null);
     }
@@ -859,6 +888,15 @@ public class MainWindow extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         ButtonAction action = ButtonAction.valueOf(e.getActionCommand());
         switch (action) {
+        case SAVE_TO_DISK:
+            saveToDisk();
+            break;
+        case RELOAD_FROM_DISK:
+            reloadFromDisk();
+            break;
+        case EXIT:
+            confirmAndExit();
+            break;
         case LOCK_OR_UNLOCK_STORE:
             lockOrUnlockSelectedStore();
             break;
@@ -916,6 +954,59 @@ public class MainWindow extends JFrame implements ActionListener {
         return button;
     }
 
+    private void saveToDisk() {
+        assert (_needsSaveToDisk);
+        /* TODO: should first check if there are any newly-created stores
+             which have not had their password set: (!store.isLocked() && !store.hasKey()), since this will make
+             serialization fail */
+        try {
+            _pwsafe.save();
+        } catch (DatastoreFileException e) {
+            JOptionPane.showMessageDialog(this, "Save failed:\n" + e.toString());
+            return;
+        }
+        _needsSaveToDisk = false;
+        JOptionPane.showMessageDialog(this, "Saved ok");
+        // TODO: refresh UI - store list (because serialization automatically locks any unlocked stores)
+    }
+
+    private void reloadFromDisk() {
+        // Button shouldn't be enabled unless things have changed since last load
+        assert (_needsSaveToDisk);
+        if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
+                "Reload and discard changes?",
+                "Confirm reload",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE)) {
+            try {
+                // This will automatically destroy existing secrets
+                _pwsafe.load();
+            } catch (DatastoreFileException e) {
+                JOptionPane.showMessageDialog(this, "Reload failed:\n" + e.toString());
+                return;
+            }
+            _needsSaveToDisk = false;
+            JOptionPane.showMessageDialog(this, "Reloaded ok");
+            // TODO: refresh UI - store list
+        }
+    }
+
+    private void confirmAndExit() {
+        /* TODO: improve this - only confirm if there are unsaved changes.
+                 This may require stores to track whether entries were actually edited while unlocked...
+                 but we want Lock to re-encrypt (new salt) each time, which requires saving to disk,
+                 so is this distinction worthwhile? */
+        // TODO: do this confirmation for window close as well as pressing the Exit button
+        if ((!_needsSaveToDisk) || (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
+                "Quit without saving changes?",
+                "Confirm exit",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE))) {
+            setVisible(false);
+            dispose();
+        }
+    }
+
     /**
      * Called when the window is closed
      */
@@ -928,8 +1019,4 @@ public class MainWindow extends JFrame implements ActionListener {
             super.dispose();
         }
     }
-
-    /* TODO: add Save / Load buttons to write to file; these should first check if there are any newly-created stores
-             which have not had their password set: (!store.isLocked() && !store.hasKey()), since this will make
-             serialization fail. */
 }
