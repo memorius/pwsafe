@@ -199,11 +199,11 @@ public class MainWindow extends JFrame implements ActionListener {
         Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _saveToDiskButton = makeButton(box, SAVE_TO_DISK_BUTTON_TEXT, -1 /* KeyEvent.VK_E*/,
+        _saveToDiskButton = makeButton(box, SAVE_TO_DISK_BUTTON_TEXT, KeyEvent.VK_S,
                 ButtonAction.SAVE_TO_DISK);
-        _reloadFromDiskButton = makeButton(box, RELOAD_FROM_DISK_BUTTON_TEXT, -1 /* KeyEvent.VK_E*/,
+        _reloadFromDiskButton = makeButton(box, RELOAD_FROM_DISK_BUTTON_TEXT, KeyEvent.VK_K,
                 ButtonAction.RELOAD_FROM_DISK);
-        _exitButton = makeButton(box, EXIT_BUTTON_TEXT, -1 /* KeyEvent.VK_E*/,
+        _exitButton = makeButton(box, EXIT_BUTTON_TEXT, KeyEvent.VK_X,
                 ButtonAction.EXIT);
 
         return box;
@@ -242,13 +242,19 @@ public class MainWindow extends JFrame implements ActionListener {
         JPanel panel = new JPanel(gridbag);
         GridBagConstraints c = new GridBagConstraints();
 
+        final Insets zeroInsets = new Insets(0, 0, 0, 0);
+        final Insets textFieldInsets = new Insets(2, 2, 2, 2);
+        final int labelRightPad = 5;
+
         // Column 1
         c.weightx = 0.0;
         c.weighty = 0.0;
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
+        c.insets = zeroInsets;
         c.anchor = GridBagConstraints.WEST;
+        c.ipadx = labelRightPad;
 
         c.gridheight = 2;
         JLabel label = new JLabel("Name:");
@@ -277,10 +283,11 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy = 0;
         c.gridx++;
         c.gridheight = 1;
-        c.weightx = 1.0;
-        c.insets = new Insets(2, 2, 2, 2);
 
         c.gridwidth = 2;
+        c.weightx = 1.0;
+        c.ipadx = 0;
+        c.insets = textFieldInsets;
         c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
         _entryNameField = new JTextField();
@@ -289,6 +296,9 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 1;
+        c.weightx = 0.0;
+        c.ipadx = labelRightPad;
+        c.insets = zeroInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Created:");
@@ -297,6 +307,9 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 2;
+        c.weightx = 1.0;
+        c.ipadx = 0;
+        c.insets = textFieldInsets;
         c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
         _entryUserIDField = new JTextField();
@@ -305,6 +318,9 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 1;
+        c.weightx = 0.0;
+        c.ipadx = labelRightPad;
+        c.insets = zeroInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Changed:");
@@ -313,6 +329,10 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 2;
+        c.weightx = 1.0;
+        c.ipadx = 0;
+        // c.insets = textFieldInsets;
+        c.insets = zeroInsets;
         c.anchor = GridBagConstraints.SOUTH;
         c.fill = GridBagConstraints.HORIZONTAL;
         Component passwordFieldButtons = createPasswordStoreEntryPasswordFieldAndButtons();
@@ -321,6 +341,9 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 1;
+        c.weightx = 0.0;
+        c.ipadx = labelRightPad;
+        c.insets = zeroInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Changed:");
@@ -329,7 +352,10 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 2;
+        c.weightx = 1.0;
         c.weighty = 1.0;
+        c.ipadx = 0;
+        c.insets = textFieldInsets;
         c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.BOTH;
         _entryAdditionalInfoField = new JTextArea();
@@ -342,18 +368,24 @@ public class MainWindow extends JFrame implements ActionListener {
 
         c.gridwidth = 1;
         c.weighty = 0.0;
+        c.weightx = 0.0;
+        c.insets = zeroInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
+        c.ipadx = labelRightPad;
         label = new JLabel("Changed:");
         gridbag.setConstraints(label, c);
         panel.add(label);
 
         // Column 3
         c.gridy = 0;
+        c.weightx = 0.0;
         c.weighty = 0.0;
+        c.ipadx = 0;
+        c.insets = zeroInsets;
         c.gridx++;
         c.anchor = GridBagConstraints.NORTHWEST;
-        c.fill = GridBagConstraints.HORIZONTAL;
+        c.fill = GridBagConstraints.NONE;
 
         c.gridy++;
 
@@ -389,7 +421,6 @@ public class MainWindow extends JFrame implements ActionListener {
         JPanel panel = new JPanel(gridbag);
         GridBagConstraints c = new GridBagConstraints();
 
-        c.weightx = 0.0;
         c.weighty = 0.0;
         c.gridx = 0;
         c.gridy = 0;
@@ -406,10 +437,6 @@ public class MainWindow extends JFrame implements ActionListener {
         c.weightx = 0.0;
         c.anchor = GridBagConstraints.CENTER;
         c.fill = GridBagConstraints.NONE;
-        _changeEntryPasswordButton = makeButton(panel, CHANGE_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_E,
-                ButtonAction.CHANGE_ENTRY_PASSWORD);
-        gridbag.setConstraints(_changeEntryPasswordButton, c);
-        c.gridx++;
 
         _showOrHideEntryPasswordButton = makeButton(panel, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_R,
                 ButtonAction.SHOW_OR_HIDE_ENTRY_PASSWORD);
@@ -420,6 +447,19 @@ public class MainWindow extends JFrame implements ActionListener {
                 ButtonAction.COPY_ENTRY_PASSWORD);
         gridbag.setConstraints(_copyEntryPasswordButton, c);
         c.gridx++;
+
+        _changeEntryPasswordButton = makeButton(panel, CHANGE_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_E,
+                ButtonAction.CHANGE_ENTRY_PASSWORD);
+        gridbag.setConstraints(_changeEntryPasswordButton, c);
+        c.gridx++;
+
+        Insets buttonMargin;
+        buttonMargin = _showOrHideEntryPasswordButton.getMargin();
+        buttonMargin.left = Math.max(buttonMargin.left - 8, 0);
+        buttonMargin.right = buttonMargin.left;
+        _showOrHideEntryPasswordButton.setMargin(buttonMargin);
+        _changeEntryPasswordButton.setMargin(buttonMargin);
+        _copyEntryPasswordButton.setMargin(buttonMargin);
 
         setPasswordStoreEntryPasswordPlaintextVisible(false);
 
@@ -453,7 +493,7 @@ public class MainWindow extends JFrame implements ActionListener {
         _entryPasswordPlaintextVisible = visible;
         _showOrHideEntryPasswordButton.setText(visible ? HIDE_ENTRY_PASSWORD_BUTTON_TEXT
                                                        : SHOW_ENTRY_PASSWORD_BUTTON_TEXT);
-        _showOrHideEntryPasswordButton.setMnemonic(visible ? KeyEvent.VK_H : KeyEvent.VK_S);
+        _showOrHideEntryPasswordButton.setMnemonic(visible ? KeyEvent.VK_H : KeyEvent.VK_R);
         _entryPasswordField.setEchoChar(visible ? ((char) 0) : '*');
     }
 
@@ -461,8 +501,8 @@ public class MainWindow extends JFrame implements ActionListener {
         Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _saveEntryButton    = makeButton(box, SAVE_ENTRY_BUTTON_TEXT,    KeyEvent.VK_S,      ButtonAction.SAVE_ENTRY);
-        _discardEntryButton = makeButton(box, DISCARD_ENTRY_BUTTON_TEXT, KeyEvent.VK_ESCAPE, ButtonAction.DISCARD_ENTRY);
+        _saveEntryButton    = makeButton(box, SAVE_ENTRY_BUTTON_TEXT,    KeyEvent.VK_V, ButtonAction.SAVE_ENTRY);
+        _discardEntryButton = makeButton(box, DISCARD_ENTRY_BUTTON_TEXT, KeyEvent.VK_Y, ButtonAction.DISCARD_ENTRY);
 
         return box;
     }
