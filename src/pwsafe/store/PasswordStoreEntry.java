@@ -192,7 +192,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     /**
      * Get the account username / login name for this record.
      *
-     * @return the username, can be null or empty
+     * @return non-null username, can be empty
      */
     public String getUserID() {
         return _userID;
@@ -201,7 +201,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     /**
      * Set the account username / login name for this record.
      *
-     * @param userID the new account username / login name, can be null or empty
+     * @param userID the new account username / login name
      * @param savedTime when the change was saved
      */
     private void setUserID(String userID, Date savedTime) {
@@ -233,7 +233,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      * Assuming the caller does not make a copy, this PasswordStoreEntry retains responsibility for clearing
      * and discarding the secret data, and caller should not zero it.
      *
-     * @return the password (plaintext), can be null or empty.
+     * @return non-null password (plaintext), can be empty
      * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
     public char[] getPassword() {
@@ -249,7 +249,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      * The caller should discard their reference to it but leave its contents intact;
      * this PasswordStoreEntry object assumes responsibility for clearing and discarding the secret data.
      *
-     * @param password the new password (plaintext), can be null or empty
+     * @param password the new password (plaintext)
      * @param savedTime when the change was saved
      * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
@@ -285,7 +285,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      * Assuming the caller does not make a copy, this PasswordStoreEntry retains responsibility for clearing
      * and discarding the secret data, and caller should not zero it.
      *
-     * @return the additional login info (plaintext), can be null or empty.
+     * @return non-null additional login info (plaintext), can be empty.
      * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
     public char[] getAdditionalInfo() {
@@ -301,7 +301,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      * The caller should discard their reference to it but leave its contents intact;
      * this PasswordStoreEntry object assumes responsibility for clearing and discarding the secret data.
      *
-     * @param additionalInfo the new additional login info (plaintext), can be null or empty
+     * @param additionalInfo the new additional login info (plaintext), can be empty
      * @param savedTime when the change was saved
      * @throws IllegalStateException if {@link #destroySecrets()} method has been called
      */
@@ -401,7 +401,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
         try {
             checkNotDestroyed();
         } catch (IllegalStateException e) {
-            IOException ioe = new IOException("Nothing to serialize");
+            IOException ioe = new IOException("Nothing to serialize - secrets already destroyed");
             ioe.initCause(e);
             throw ioe;
         }
