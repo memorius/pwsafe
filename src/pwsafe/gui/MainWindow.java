@@ -45,6 +45,8 @@ import pwsafe.DatastoreFileException;
 import pwsafe.DecryptionException;
 import pwsafe.EncryptionException;
 import pwsafe.PWSafe;
+import pwsafe.store.Attachment;
+import pwsafe.store.AttachmentList;
 import pwsafe.store.PasswordStore;
 import pwsafe.store.PasswordStoreEntry;
 import pwsafe.store.PasswordStoreEntryList;
@@ -85,6 +87,10 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String HIDE_ENTRY_PASSWORD_BUTTON_TEXT = "Hide";
     private static final String COPY_ENTRY_PASSWORD_BUTTON_TEXT = "Copy";
     private static final String CHANGE_ENTRY_PASSWORD_BUTTON_TEXT = "Edit";
+    // Attachment editing
+    private static final String ADD_ATTACHMENT_BUTTON_TEXT = "Add";
+    private static final String REMOVE_ATTACHMENT_BUTTON_TEXT = "Delete";
+    private static final String VIEW_ATTACHMENT_BUTTON_TEXT = "View";
 
     private static final int PASSWORD_FIELD_COLUMNS = 10;
 
@@ -108,7 +114,10 @@ public class MainWindow extends JFrame implements ActionListener {
         DISCARD_ENTRY,
         SHOW_OR_HIDE_ENTRY_PASSWORD,
         COPY_ENTRY_PASSWORD,
-        CHANGE_ENTRY_PASSWORD
+        CHANGE_ENTRY_PASSWORD,
+        VIEW_ATTACHMENT,
+        ADD_ATTACHMENT,
+        REMOVE_ATTACHMENT
     }
 
 // Underlying data store
@@ -149,6 +158,12 @@ public class MainWindow extends JFrame implements ActionListener {
     private JButton _copyEntryPasswordButton;
     private JButton _saveEntryButton;
     private JButton _discardEntryButton;
+
+// Attachment list
+    private JList _attachmentList;
+    private JButton _addAttachmentButton;
+    private JButton _removeAttachmentButton;
+    private JButton _viewAttachmentButton;
 
     private boolean _entryPasswordPlaintextVisible = false;
     private boolean _isNewEntry = false;
@@ -306,6 +321,13 @@ public class MainWindow extends JFrame implements ActionListener {
         label.setDisplayedMnemonic(KeyEvent.VK_I);
         gridbag.setConstraints(label, c);
         panel.add(label);
+        c.gridy += 2;
+
+        c.gridheight = 1;
+        label = new JLabel("Attachments:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
 
         // Column 2
         c.gridy = 0;
@@ -403,6 +425,19 @@ public class MainWindow extends JFrame implements ActionListener {
         label = new JLabel("Changed:");
         gridbag.setConstraints(label, c);
         panel.add(label);
+        c.gridy++;
+
+        c.gridwidth = 2;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+        c.ipadx = 0;
+        c.insets = textFieldInsets;
+        c.anchor = GridBagConstraints.CENTER;
+        c.fill = GridBagConstraints.BOTH;
+        Component attachmentsPanel = createAttachmentsPanel();
+        gridbag.setConstraints(attachmentsPanel, c);
+        panel.add(attachmentsPanel);
+        c.gridy++;
 
         // Column 3
         c.gridy = 0;
@@ -493,6 +528,66 @@ public class MainWindow extends JFrame implements ActionListener {
         return panel;
     }
 
+    /**
+     * List of attachments in the currently-selected store entry plus control buttons
+     */
+    private Component createAttachmentsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createLineBorder(Color.black));
+        panel.add(createAttachmentListButtons(), BorderLayout.NORTH);
+        panel.add(createAttachmentList(), BorderLayout.CENTER);
+        return panel;
+    }
+
+    /**
+     * List of attachments in the currently-selected store entry
+     */
+    private Component createAttachmentList() {
+        _attachmentList = new JList();
+        _attachmentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        //_attachmentList.setFixedCellWidth(200);
+        _attachmentList.addMouseListener(new MouseAdapter() {
+                public void mouseClicked(MouseEvent e) {
+                    if (e.getClickCount() == 2) {
+                        // Double-click
+                        int index = _attachmentList.locationToIndex(e.getPoint());
+                        Attachment attachment = (Attachment) _attachmentList.getModel().getElementAt(index);
+                        if (attachment != null) {
+                            // TODO: viewSelectedAttachment();
+                        }
+                    }
+                }
+            });
+        _attachmentList.addListSelectionListener(new ListSelectionListener() {
+                public void valueChanged(ListSelectionEvent e) {
+                    if (e.getValueIsAdjusting()) {
+                        return; // Will get another event
+                    }
+                    // int index = e.getFirstIndex();
+                    // TODO: anything here for attachments?
+                }
+            });
+        // _attachmentList.setPrototypeCellValue("filename.txt");
+        _attachmentList.setVisibleRowCount(3);
+        JScrollPane pane = new JScrollPane(_attachmentList);
+        return pane;
+    }
+
+    /**
+     * Control buttons for list of attachments in currently-selected store entry
+     */
+    private Component createAttachmentListButtons() {
+        Box box = Box.createHorizontalBox();
+        box.setBorder(BorderFactory.createLineBorder(Color.black));
+
+        _addAttachmentButton    = makeButton(box, ADD_ATTACHMENT_BUTTON_TEXT,    -1, ButtonAction.ADD_ATTACHMENT);
+        _removeAttachmentButton = makeButton(box, REMOVE_ATTACHMENT_BUTTON_TEXT, -1, ButtonAction.REMOVE_ATTACHMENT);
+        _viewAttachmentButton   = makeButton(box, VIEW_ATTACHMENT_BUTTON_TEXT,   -1, ButtonAction.VIEW_ATTACHMENT);
+
+        return box;
+    }
+
+
     private void clearPasswordStoreEntryEditFields() {
         _entryCreatedField.setText(null);
         _entryNameField.setText(null);
@@ -514,6 +609,10 @@ public class MainWindow extends JFrame implements ActionListener {
         _changeEntryPasswordButton.setEnabled(enabled);
         _showOrHideEntryPasswordButton.setEnabled(enabled);
         _copyEntryPasswordButton.setEnabled(enabled);
+        _attachmentList.setEnabled(enabled);
+        _addAttachmentButton.setEnabled(enabled);
+        _removeAttachmentButton.setEnabled(enabled);
+        _viewAttachmentButton.setEnabled(enabled);
     }
 
     private void setPasswordStoreEntryPasswordPlaintextVisible(boolean visible) {
@@ -1032,6 +1131,15 @@ public class MainWindow extends JFrame implements ActionListener {
             break;
         case CHANGE_ENTRY_PASSWORD:
             changeSelectedEntryPassword();
+            break;
+        case VIEW_ATTACHMENT:
+            // TODO
+            break;
+        case ADD_ATTACHMENT:
+            // TODO
+            break;
+        case REMOVE_ATTACHMENT:
+            // TODO
             break;
         default:
             break;
