@@ -49,7 +49,7 @@ public class PasswordEntryDialog extends JDialog
 
     private static final String OK_BUTTON_TEXT = "OK";
     private static final String CANCEL_BUTTON_TEXT = "Cancel";
-    private static final String SHOW_PASSWORDS_BUTTON_TEXT = "Reveal";
+    private static final String SHOW_PASSWORDS_BUTTON_TEXT = "Show";
     private static final String HIDE_PASSWORDS_BUTTON_TEXT = "Hide";
     private static final String GENERATE_PASSWORD_BUTTON_TEXT = "Generate Password";
 
@@ -195,7 +195,8 @@ public class PasswordEntryDialog extends JDialog
         c.weighty = 0.0;
         c.gridheight = 3;
         c.insets = new Insets(0, 0, 0, 0);
-        _showOrHidePasswordsButton = makeButton(panel, SHOW_PASSWORDS_BUTTON_TEXT, KeyEvent.VK_R, ButtonAction.SHOW_HIDE_PASSWORDS);
+        _showOrHidePasswordsButton = makeButton(panel, SHOW_PASSWORDS_BUTTON_TEXT, KeyEvent.VK_H,
+                ButtonAction.SHOW_HIDE_PASSWORDS);
         // _showOrHidePasswordsButton.setMinimumSize(new Dimension(200, 0));
         gridbag.setConstraints(_showOrHidePasswordsButton, c);
 
@@ -459,7 +460,7 @@ public class PasswordEntryDialog extends JDialog
 
         _showOrHidePasswordsButton.setText(visible ? HIDE_PASSWORDS_BUTTON_TEXT
                                                    : SHOW_PASSWORDS_BUTTON_TEXT);
-        _showOrHidePasswordsButton.setMnemonic(visible ? KeyEvent.VK_H : KeyEvent.VK_S);
+        _showOrHidePasswordsButton.setMnemonic(visible ? KeyEvent.VK_H : KeyEvent.VK_H);
 
         _passwordField1.setEchoChar(visible ? ((char) 0) : '*');
         if (_multipleEntry) {

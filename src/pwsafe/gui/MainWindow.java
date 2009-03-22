@@ -83,7 +83,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String SAVE_ENTRY_BUTTON_TEXT = "Save entry";
     private static final String DISCARD_ENTRY_BUTTON_TEXT = "Discard entry changes";
     // Entry editing
-    private static final String SHOW_ENTRY_PASSWORD_BUTTON_TEXT = "Reveal";
+    private static final String SHOW_ENTRY_PASSWORD_BUTTON_TEXT = "Show";
     private static final String HIDE_ENTRY_PASSWORD_BUTTON_TEXT = "Hide";
     private static final String COPY_ENTRY_PASSWORD_BUTTON_TEXT = "Copy";
     private static final String CHANGE_ENTRY_PASSWORD_BUTTON_TEXT = "Edit";
@@ -229,7 +229,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
         _saveToDiskButton = makeButton(box, SAVE_TO_DISK_BUTTON_TEXT, KeyEvent.VK_W,
                 ButtonAction.SAVE_TO_DISK);
-        _reloadFromDiskButton = makeButton(box, RELOAD_FROM_DISK_BUTTON_TEXT, KeyEvent.VK_K,
+        _reloadFromDiskButton = makeButton(box, RELOAD_FROM_DISK_BUTTON_TEXT, KeyEvent.VK_R,
                 ButtonAction.RELOAD_FROM_DISK);
         _exitButton = makeButton(box, EXIT_BUTTON_TEXT, KeyEvent.VK_X,
                 ButtonAction.EXIT);
@@ -500,7 +500,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.anchor = GridBagConstraints.CENTER;
         c.fill = GridBagConstraints.NONE;
 
-        _showOrHideEntryPasswordButton = makeButton(panel, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_R,
+        _showOrHideEntryPasswordButton = makeButton(panel, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_H,
                 ButtonAction.SHOW_OR_HIDE_ENTRY_PASSWORD);
         gridbag.setConstraints(_showOrHideEntryPasswordButton, c);
         c.gridx++;
@@ -619,7 +619,7 @@ public class MainWindow extends JFrame implements ActionListener {
         _entryPasswordPlaintextVisible = visible;
         _showOrHideEntryPasswordButton.setText(visible ? HIDE_ENTRY_PASSWORD_BUTTON_TEXT
                                                        : SHOW_ENTRY_PASSWORD_BUTTON_TEXT);
-        _showOrHideEntryPasswordButton.setMnemonic(visible ? KeyEvent.VK_H : KeyEvent.VK_R);
+        _showOrHideEntryPasswordButton.setMnemonic(visible ? KeyEvent.VK_H : KeyEvent.VK_H);
         _entryPasswordField.setEchoChar(visible ? ((char) 0) : '*');
     }
 
