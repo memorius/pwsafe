@@ -48,6 +48,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     private Date _passwordLastChanged;
     private char[] _additionalInfo;
     private Date _additionalInfoLastChanged;
+    private AttachmentList _attachmentList;
 
     /**
      * Construct a PasswordStoreEntry
@@ -89,6 +90,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
         _userIDLastChanged = now;
         _passwordLastChanged = now;
         _additionalInfoLastChanged = now;
+        _attachmentList = new AttachmentList();
     }
 
     /**
@@ -108,10 +110,10 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      *         e.g. additional security questions, can be empty but not null
      * @throws IllegalArgumentException if any argument is null, or if displayName is empty
      */
-    public void setAllFields(final String displayName,
-                             final String userID,
-                             final char[] password,
-                             final char[] additionalInfo) {
+    public void setEntryFields(final String displayName,
+                               final String userID,
+                               final char[] password,
+                               final char[] additionalInfo) {
         final Date now = new Date();
         if (userID == null) {
             throw new IllegalArgumentException("userID must not be null");
@@ -326,6 +328,15 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     }
 
     /**
+     * Get the attachments for this record.
+     *
+     * @return non-null attachment list, can be empty.
+     */
+    public AttachmentList getAttachmentList() {
+        return _attachmentList;
+    }
+
+    /**
      * Sort by _displayName then by _userID.
      * <p>
      * NOTE: this is inconsistent with equals() in that equals() tests object equality (since it is used for
@@ -416,6 +427,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
         out.writeObject(_passwordLastChanged);
         out.writeObject(_additionalInfo);
         out.writeObject(_additionalInfoLastChanged);
+        out.writeObject(_attachmentList);
     }
 
     /**
@@ -445,6 +457,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
         _passwordLastChanged       = (Date)   in.readObject();
         _additionalInfo            = (char[]) in.readObject();
         _additionalInfoLastChanged = (Date)   in.readObject();
+        _attachmentList            = (AttachmentList) in.readObject();
     }
 
     /**
@@ -455,6 +468,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     public void destroySecrets() {
         clearPassword();
         clearAdditionalInfo();
+        _attachmentList.destroySecrets();
         _destroyed = true;
     }
 

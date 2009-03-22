@@ -965,10 +965,10 @@ public class MainWindow extends JFrame implements ActionListener {
             if ("".equals(entryName)) {
                 entryName = entry.getDisplayName();
             }
-            entry.setAllFields(entryName,
-                               _entryUserIDField.getText(),
-                               _entryPasswordField.getPassword(),
-                               _entryAdditionalInfoField.getText().toCharArray());
+            entry.setEntryFields(entryName,
+                                 _entryUserIDField.getText(),
+                                 _entryPasswordField.getPassword(),
+                                 _entryAdditionalInfoField.getText().toCharArray());
         } else if (_isNewEntry) {
             // Discarding newly-added entry, remove completely
             removeSelectedEntry(entry);
