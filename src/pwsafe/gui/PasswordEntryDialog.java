@@ -34,6 +34,8 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import pwsafe.util.RandomPasswordGenerator;
 
@@ -42,7 +44,8 @@ import pwsafe.util.RandomPasswordGenerator;
  *
  * @author Nick Clarke
  */
-public class PasswordEntryDialog extends JDialog implements ActionListener, ItemListener, ChangeListener {
+public class PasswordEntryDialog extends JDialog
+        implements ActionListener, ItemListener, ChangeListener, DocumentListener {
 
     private static final String OK_BUTTON_TEXT = "OK";
     private static final String CANCEL_BUTTON_TEXT = "Cancel";
@@ -52,9 +55,12 @@ public class PasswordEntryDialog extends JDialog implements ActionListener, Item
 
     private static final int PASSWORD_FIELD_COLUMNS = 20;
 
+    // Set by constructor
+    private final boolean _multipleEntry;
+    private final boolean _allowEmptyPassword;
+    private final RandomPasswordGenerator _randomPasswordGenerator;
+
     private boolean _ok = false;
-    private boolean _multipleEntry;
-    private RandomPasswordGenerator _randomPasswordGenerator = null;
     private boolean _passwordPlaintextVisible = false;
     private char[] _password;
     private JPasswordField _passwordField1;
@@ -86,12 +92,11 @@ public class PasswordEntryDialog extends JDialog implements ActionListener, Item
      * Construct a PasswordEntryDialog
      */
     public PasswordEntryDialog(final Frame parent, final String title, final boolean multipleEntry,
-            final boolean showRandomPasswordGenerator) {
+            final boolean showRandomPasswordGenerator, final boolean allowEmptyPassword) {
         super(parent, title, true);
         _multipleEntry = multipleEntry;
-        if (showRandomPasswordGenerator) {
-            _randomPasswordGenerator = new RandomPasswordGenerator();
-        }
+        _allowEmptyPassword = allowEmptyPassword;
+        _randomPasswordGenerator = (showRandomPasswordGenerator ? new RandomPasswordGenerator() : null);
         setup();
     }
 
@@ -121,6 +126,8 @@ public class PasswordEntryDialog extends JDialog implements ActionListener, Item
         setContentPane(mainContentPane);
 
         getRootPane().setDefaultButton(_okButton);
+
+        updateOKButtonState();
 
         // Auto-size based on components
         pack();
@@ -162,17 +169,20 @@ public class PasswordEntryDialog extends JDialog implements ActionListener, Item
         c.weighty = 1.0;
         c.insets = new Insets(0, 2, 0, 2);
         _passwordField1 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
+        _passwordField1.getDocument().addDocumentListener(this);
         gridbag.setConstraints(_passwordField1, c);
         panel.add(_passwordField1);
 
         if (_multipleEntry) {
             c.gridy++;
             _passwordField2 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
+            _passwordField2.getDocument().addDocumentListener(this);
             gridbag.setConstraints(_passwordField2, c);
             panel.add(_passwordField2);
 
             c.gridy++;
             _passwordField3 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
+            _passwordField3.getDocument().addDocumentListener(this);
             gridbag.setConstraints(_passwordField3, c);
             panel.add(_passwordField3);
         }
@@ -357,6 +367,25 @@ public class PasswordEntryDialog extends JDialog implements ActionListener, Item
     }
 
     /**
+     * DocumentListener implementation for password fields
+     */
+    public void changedUpdate(DocumentEvent e) {}
+
+    /**
+     * DocumentListener implementation for password fields
+     */
+    public void insertUpdate(DocumentEvent e) {
+        updateOKButtonState();
+    }
+
+    /**
+     * DocumentListener implementation for password fields
+     */
+    public void removeUpdate(DocumentEvent e) {
+        updateOKButtonState();
+    }
+
+    /**
      * ChangeListener implementation
      */
     public void stateChanged(ChangeEvent e) {
@@ -408,6 +437,23 @@ public class PasswordEntryDialog extends JDialog implements ActionListener, Item
         return box;
     }
 
+    private void updateOKButtonState() {
+        if (_allowEmptyPassword) {
+            return; // always enabled
+        }
+        // Just check that at least one field is non-empty (confirmMatch will interrupt OK if they they don't match)
+        char[] p1 = _passwordField1.getPassword();
+        char[] p2 = (_multipleEntry ? _passwordField2.getPassword() : new char[0]);
+        char[] p3 = (_multipleEntry ? _passwordField3.getPassword() : new char[0]);
+        try {
+            _okButton.setEnabled(p1.length != 0 || p2.length != 0 || p3.length != 0);
+        } finally {
+            Arrays.fill(p1, (char) 0);
+            Arrays.fill(p2, (char) 0);
+            Arrays.fill(p3, (char) 0);
+        }
+    }
+
     private void setPasswordPlaintextVisible(boolean visible) {
         _passwordPlaintextVisible = visible;
 
@@ -454,7 +500,13 @@ public class PasswordEntryDialog extends JDialog implements ActionListener, Item
     public char[] showDialog() {
         setVisible(true);
         // It's modal, so when setVisible returns, user interaction has finished
-        char[] result = _ok ? _password : null;
+        char[] result;
+        if (_ok) {
+            result = _password;
+            assert (result != null);
+        } else {
+            result = null;
+        }
         _password = null; // caller now takes responsibility for clearing the secret data when done
         return result;
     }
@@ -463,6 +515,7 @@ public class PasswordEntryDialog extends JDialog implements ActionListener, Item
      * Implementation of ActionListener
      */
     public void actionPerformed(ActionEvent e) {
+        // Must be one of the buttons
         ButtonAction action = ButtonAction.valueOf(e.getActionCommand());
         switch (action) {
         case OK:

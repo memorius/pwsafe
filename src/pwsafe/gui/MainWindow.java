@@ -599,11 +599,12 @@ public class MainWindow extends JFrame implements ActionListener {
     private void unlockStore(PasswordStore store) {
         assert (store.isLocked());
         // Prompt for store password
-        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter store unlock password", false, false);
+        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter store unlock password", false, false, false);
         char[] password = dialog.showDialog();
-        if (password == null || password.length == 0) { // cancelled / empty
+        if (password == null) { // cancelled
             return;
         }
+        assert (password.length != 0);
         // Try to decrypt
         EncryptionKey key = new EncryptionKey(password);
         try {
@@ -644,11 +645,12 @@ public class MainWindow extends JFrame implements ActionListener {
         assert (store != null);
         assert (!store.isLocked());
         // Prompt for store password
-        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter new store password", true, false);
+        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter new store password", true, false, false);
         char[] password = dialog.showDialog();
-        if (password == null || password.length == 0) { // cancelled / empty
+        if (password == null) { // cancelled
             return;
         }
+        assert (password.length != 0);
         // Update the store object - it will store the password for use when locking
         store.setKey(new EncryptionKey(password));
         _needsSaveToDisk = true;
@@ -660,11 +662,12 @@ public class MainWindow extends JFrame implements ActionListener {
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         assert (entry != null);
         // Prompt for store password
-        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter new entry password", true, true);
+        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter new entry password", true, true, true);
         char[] password = dialog.showDialog();
-        if (password == null || password.length == 0) { // cancelled / empty
+        if (password == null) { // cancelled
             return;
         }
+        // OK - note that value could still be an empty string, but we allow this to clear existing password
         _entryPasswordField.setText(new String(password));
     }
 
@@ -860,12 +863,9 @@ public class MainWindow extends JFrame implements ActionListener {
         if (entry == null) {
             assert (!saveEdits);
         } else if (saveEdits) {
-            // Only the entry name is required, other fields can be set to empty / null
-            String entryName = _entryNameField.getText();
-            if (entryName != null) {
-                entryName = entryName.trim();
-            }
-            if (entryName == null || "".equals(entryName)) {
+            // Only the entry name is required, other fields can be set to empty
+            String entryName = _entryNameField.getText().trim();
+            if ("".equals(entryName)) {
                 entryName = entry.getDisplayName();
             }
             entry.setAllFields(entryName,

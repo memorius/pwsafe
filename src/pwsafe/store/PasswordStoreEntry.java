@@ -59,11 +59,11 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      *
      * @param displayName name to appear in list of entries, typically a website address or company name,
      *         must not be null or empty
-     * @param userID the account username / login name, can be null or empty
-     * @param password the account password, can be null or empty
+     * @param userID the account username / login name, can be empty but not null
+     * @param password the account password, can be empty but not null
      * @param additionalInfo free-form text to record any extra login info for this account,
-     *         e.g. additional security questions, can be null or empty
-     * @throws IllegalArgumentException if displayName is null or empty
+     *         e.g. additional security questions, can be empty but not null
+     * @throws IllegalArgumentException if any argument is null, or if displayName is empty
      */
     protected PasswordStoreEntry(
             final String displayName,
@@ -72,33 +72,57 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
             final char[] additionalInfo) {
         final Date now = new Date();
         checkDisplayName(displayName);
-        _entryCreated = now;
+        if (userID == null) {
+            throw new IllegalArgumentException("userID must not be null");
+        }
+        if (password == null) {
+            throw new IllegalArgumentException("password must not be null");
+        }
+        if (additionalInfo == null) {
+            throw new IllegalArgumentException("additionalInfo must not be null");
+        }
         _displayName = displayName;
         _userID = userID;
-        _userIDLastChanged = now;
         _password = password;
-        _passwordLastChanged = now;
         _additionalInfo = additionalInfo;
+        _entryCreated = now;
+        _userIDLastChanged = now;
+        _passwordLastChanged = now;
         _additionalInfoLastChanged = now;
     }
 
     /**
      * Save all fields at once, with the same timestamp for any modified fields.
+     * <p>
+     * <b>IMPORTANT:</b> this stores references to the supplied password and additionalInfo arrays (if any),
+     * it does not make copies.
+     * The caller should discard their references to these arrays but leave their contents intact;
+     * this PasswordStoreEntry object assumes responsibility for clearing and discarding the secret data.
+     *
      *
      * @param displayName name to appear in list of entries, typically a website address or company name,
      *         must not be null or empty
-     * @param userID the account username / login name, can be null or empty
-     * @param password the account password, can be null or empty
+     * @param userID the account username / login name, can be empty but not null
+     * @param password the account password, can be empty but not null
      * @param additionalInfo free-form text to record any extra login info for this account,
-     *         e.g. additional security questions, can be null or empty
-     * @throws IllegalArgumentException if displayName is null or empty
+     *         e.g. additional security questions, can be empty but not null
+     * @throws IllegalArgumentException if any argument is null, or if displayName is empty
      */
     public void setAllFields(final String displayName,
                              final String userID,
                              final char[] password,
                              final char[] additionalInfo) {
-        checkNotDestroyed();
         final Date now = new Date();
+        if (userID == null) {
+            throw new IllegalArgumentException("userID must not be null");
+        }
+        if (password == null) {
+            throw new IllegalArgumentException("password must not be null");
+        }
+        if (additionalInfo == null) {
+            throw new IllegalArgumentException("additionalInfo must not be null");
+        }
+        checkNotDestroyed();
         setDisplayName(displayName);
         setUserID(userID, now);
         setPassword(password, now);

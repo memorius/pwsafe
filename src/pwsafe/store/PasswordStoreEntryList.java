@@ -87,7 +87,7 @@ public final class PasswordStoreEntryList implements Serializable {
      */
     public PasswordStoreEntry addEntry(String displayName) {
         checkNotDestroyed();
-        PasswordStoreEntry entry = new PasswordStoreEntry(displayName, null, null, null);
+        PasswordStoreEntry entry = new PasswordStoreEntry(displayName, "", new char[0], new char[0]);
         _entries.add(entry);
         return entry;
     }
