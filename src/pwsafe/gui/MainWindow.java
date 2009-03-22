@@ -110,8 +110,8 @@ public class MainWindow extends JFrame implements ActionListener {
     }
 
 // Underlying data store
-    private PasswordStoreList _passwordStoreList;
     private final PWSafe _pwsafe;
+    private PasswordStoreList _passwordStoreList;
     private boolean _needsSaveToDisk = false;
 
 // Main save/load/cancel buttons
@@ -262,11 +262,11 @@ public class MainWindow extends JFrame implements ActionListener {
         panel.add(label);
         c.gridy += 2;
 
-        c.gridheight = 3;
+        c.gridheight = 2;
         label = new JLabel("Password:");
         gridbag.setConstraints(label, c);
         panel.add(label);
-        c.gridy += 3;
+        c.gridy += 2;
 
         c.gridheight = 2;
         label = new JLabel("Additional info:");
@@ -281,7 +281,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.insets = new Insets(2, 2, 2, 2);
 
         c.gridwidth = 2;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
         _entryNameField = new JTextField();
         gridbag.setConstraints(_entryNameField, c);
@@ -289,7 +289,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 1;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Created:");
         gridbag.setConstraints(label, c);
@@ -297,7 +297,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 2;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
         _entryUserIDField = new JTextField();
         gridbag.setConstraints(_entryUserIDField, c);
@@ -305,7 +305,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 1;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Changed:");
         gridbag.setConstraints(label, c);
@@ -313,34 +313,24 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy++;
 
         c.gridwidth = 2;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.SOUTH;
         c.fill = GridBagConstraints.HORIZONTAL;
-        _entryPasswordField = new JPasswordField(PASSWORD_FIELD_COLUMNS);
-        _entryPasswordField.setEditable(false);
-        gridbag.setConstraints(_entryPasswordField, c);
-        panel.add(_entryPasswordField);
+        Component passwordFieldButtons = createPasswordStoreEntryPasswordFieldAndButtons();
+        gridbag.setConstraints(passwordFieldButtons, c);
+        panel.add(passwordFieldButtons);
         c.gridy++;
 
         c.gridwidth = 1;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Changed:");
         gridbag.setConstraints(label, c);
         panel.add(label);
-        c.gridy++;
-
-        c.gridwidth = 2;
-        c.anchor = GridBagConstraints.WEST;
-        c.fill = GridBagConstraints.HORIZONTAL;
-        Component passwordFieldButtons = createPasswordStoreEntryPasswordFieldButtons();
-        gridbag.setConstraints(passwordFieldButtons, c);
-        panel.add(passwordFieldButtons);
-        setPasswordStoreEntryPasswordPlaintextVisible(false);
         c.gridy++;
 
         c.gridwidth = 2;
         c.weighty = 1.0;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.BOTH;
         _entryAdditionalInfoField = new JTextArea();
         _entryAdditionalInfoField.setLineWrap(false);
@@ -352,7 +342,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
         c.gridwidth = 1;
         c.weighty = 0.0;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Changed:");
         gridbag.setConstraints(label, c);
@@ -362,7 +352,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy = 0;
         c.weighty = 0.0;
         c.gridx++;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
 
         c.gridy++;
@@ -383,7 +373,7 @@ public class MainWindow extends JFrame implements ActionListener {
         _entryPasswordLastChangedField = new JLabel(" ");
         gridbag.setConstraints(_entryPasswordLastChangedField, c);
         panel.add(_entryPasswordLastChangedField);
-        c.gridy += 3;
+        c.gridy += 2;
 
         c.gridwidth = 1;
         _entryAdditionalInfoLastChangedField = new JLabel(" ");
@@ -394,18 +384,46 @@ public class MainWindow extends JFrame implements ActionListener {
         return panel;
     }
 
-    private Component createPasswordStoreEntryPasswordFieldButtons() {
-        Box box = Box.createHorizontalBox();
-        box.setBorder(BorderFactory.createLineBorder(Color.black));
+    private Component createPasswordStoreEntryPasswordFieldAndButtons() {
+        GridBagLayout gridbag = new GridBagLayout();
+        JPanel panel = new JPanel(gridbag);
+        GridBagConstraints c = new GridBagConstraints();
 
-        _changeEntryPasswordButton = makeButton(box, CHANGE_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_E,
+        c.weightx = 0.0;
+        c.weighty = 0.0;
+        c.gridx = 0;
+        c.gridy = 0;
+
+        c.weightx = 1.0;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        _entryPasswordField = new JPasswordField(PASSWORD_FIELD_COLUMNS);
+        _entryPasswordField.setEditable(false);
+        gridbag.setConstraints(_entryPasswordField, c);
+        panel.add(_entryPasswordField);
+        c.gridx++;
+
+        c.weightx = 0.0;
+        c.anchor = GridBagConstraints.CENTER;
+        c.fill = GridBagConstraints.NONE;
+        _changeEntryPasswordButton = makeButton(panel, CHANGE_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_E,
                 ButtonAction.CHANGE_ENTRY_PASSWORD);
-        _showOrHideEntryPasswordButton = makeButton(box, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_R,
-                ButtonAction.SHOW_OR_HIDE_ENTRY_PASSWORD);
-        _copyEntryPasswordButton = makeButton(box, COPY_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_C,
-                ButtonAction.COPY_ENTRY_PASSWORD);
+        gridbag.setConstraints(_changeEntryPasswordButton, c);
+        c.gridx++;
 
-        return box;
+        _showOrHideEntryPasswordButton = makeButton(panel, SHOW_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_R,
+                ButtonAction.SHOW_OR_HIDE_ENTRY_PASSWORD);
+        gridbag.setConstraints(_showOrHideEntryPasswordButton, c);
+        c.gridx++;
+
+        _copyEntryPasswordButton = makeButton(panel, COPY_ENTRY_PASSWORD_BUTTON_TEXT, KeyEvent.VK_C,
+                ButtonAction.COPY_ENTRY_PASSWORD);
+        gridbag.setConstraints(_copyEntryPasswordButton, c);
+        c.gridx++;
+
+        setPasswordStoreEntryPasswordPlaintextVisible(false);
+
+        return panel;
     }
 
     private void clearPasswordStoreEntryEditFields() {
