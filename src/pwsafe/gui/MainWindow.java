@@ -16,6 +16,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -178,7 +180,13 @@ public class MainWindow extends JFrame implements ActionListener {
     }
 
     private void setup() {
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    confirmAndExit();
+                }
+            });
 
         // Top-level panel inside this JFrame
         JPanel mainContentPane = new JPanel(new BorderLayout());
@@ -1095,7 +1103,6 @@ public class MainWindow extends JFrame implements ActionListener {
                  This may require stores to track whether entries were actually edited while unlocked...
                  but we want Lock to re-encrypt (new salt) each time, which requires saving to disk,
                  so is this distinction worthwhile? */
-        // TODO: do this confirmation for window close as well as pressing the Exit button
         if ((!_needsSaveToDisk) || (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
                 "Quit without saving changes?",
                 "Confirm exit",
