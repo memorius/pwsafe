@@ -302,53 +302,12 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     }
 
     /**
-     * Check whether another object is a PasswordStoreEntry (not a subclass) and represents the same account as
-     * this object. Two objects are for the same account if they have the same displayName and userID.
-     *
-     * @param o the object to compare to this object
-     * @return true if o is equal to this object (is a PasswordStoreEntry with the same displayName and userID)
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PasswordStoreEntry other = (PasswordStoreEntry) o;
-        // _displayName never null
-        if (!_displayName.equals(other._displayName)) {
-            return false;
-        }
-        if (_userID == null) {
-            if (other._userID != null) {
-                return false;
-            }
-        } else if (!_userID.equals(other._userID)) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Generate a hash code for this object.
-     *
-     * @return the hash code, which considers only the displayName and userID fields
-     */
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        final int init = 4708;
-        int hash = init;
-        // _displayName never null
-        hash = prime * hash + _displayName.hashCode();
-        hash = prime * hash + ((_userID == null) ? 0 : _userID.hashCode());
-        return hash;
-    }
-
-    /**
      * Sort by _displayName then by _userID.
+     * <p>
+     * NOTE: this is inconsistent with equals() in that equals() tests object equality (since it is used for
+     * {@link PasswordStoreEntryList#remove(PasswordStoreEntry)}, and there is no restriction on entries having the same
+     * name and userID) but this compares names and userIDs so they may be sorted.
+     * This should not be a problem for the intended uses of this class.
      */
     public int compareTo(PasswordStoreEntry other) {
         if (other == null) {
@@ -378,7 +337,6 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
                 return -1;
             }
         }
-        // equals() would return true, must return 0 here
         return 0;
     }
 

@@ -239,44 +239,12 @@ public final class PasswordStore implements Serializable, Comparable<PasswordSto
     }
 
     /**
-     * Check whether another object is a PasswordStore (not a subclass) and has the same storeName as this object.
-     *
-     * @param o the object to compare to this object
-     * @return true if o is equal to this object (is a PasswordStore with the same storeName)
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PasswordStore other = (PasswordStore) o;
-        // _storeName never null
-        if (!_storeName.equals(other._storeName)) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Generate a hash code for this object.
-     *
-     * @return the hash code, which considers only the storeName field
-     */
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        final int init = 9386;
-        int hash = init;
-        // _displayName never null
-        hash = prime * hash + _storeName.hashCode();
-        return hash;
-    }
-
-    /**
      * Sort by _storeName
+     * <p>
+     * NOTE: this is inconsistent with equals() in that equals() tests object equality (since it is used for
+     * {@link PasswordStoreList#remove(PasswordStore)}, and there is no restriction on stores having the same
+     * name) but this compares names so they may be sorted.
+     * This should not be a problem for the intended uses of this class.
      */
     public int compareTo(PasswordStore other) {
         if (other == null) {
@@ -290,7 +258,6 @@ public final class PasswordStore implements Serializable, Comparable<PasswordSto
         if (compare != 0) {
             return compare;
         }
-        // equals() would return true, must return 0 here
         return 0;
     }
 
