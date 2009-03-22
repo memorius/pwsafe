@@ -1045,9 +1045,16 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private void saveToDisk() {
         assert (_needsSaveToDisk);
-        /* TODO: should first check if there are any newly-created stores
-             which have not had their password set: (!store.isLocked() && !store.hasKey()), since this will make
-             serialization fail */
+        // Make sure there are no newly-created stores which have not had a password set:
+        // this will make serialization fail. Unlocked stores are ok as long as they have a password:
+        // serialization will automatically lock them.
+        for (PasswordStore store : _passwordStoreList.getStores()) {
+            if (!store.isLocked() && !store.hasKey()) {
+                JOptionPane.showMessageDialog(this, "Cannot save: please set a password for store '"
+                        + store.getStoreName() + "'");
+                return;
+            }
+        }
         try {
             _pwsafe.save();
         } catch (DatastoreFileException e) {
