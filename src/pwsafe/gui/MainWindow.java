@@ -61,7 +61,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String DEFAULT_NEW_ENTRY_NAME = "New entry";
     private static final String DEFAULT_NEW_STORE_NAME = "New store";
     // Main save/load/cancel buttons
-    private static final String SAVE_TO_DISK_BUTTON_TEXT = "Save to disk";
+    private static final String SAVE_TO_DISK_BUTTON_TEXT = "Write to disk";
     private static final String RELOAD_FROM_DISK_BUTTON_TEXT = "Reload from disk";
     private static final String EXIT_BUTTON_TEXT = "Exit";
     // Store list
@@ -73,11 +73,11 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String ADD_STORE_BUTTON_TEXT = "Add";
     private static final String REMOVE_STORE_BUTTON_TEXT = "Delete";
     // Entry list
-    private static final String VIEW_ENTRY_BUTTON_TEXT = "Open";
+    private static final String VIEW_ENTRY_BUTTON_TEXT = "View";
     private static final String ADD_ENTRY_BUTTON_TEXT = "Add";
     private static final String REMOVE_ENTRY_BUTTON_TEXT = "Delete";
     private static final String SAVE_ENTRY_BUTTON_TEXT = "Save entry";
-    private static final String DISCARD_ENTRY_BUTTON_TEXT = "Discard edited entry";
+    private static final String DISCARD_ENTRY_BUTTON_TEXT = "Discard entry changes";
     // Entry editing
     private static final String SHOW_ENTRY_PASSWORD_BUTTON_TEXT = "Reveal";
     private static final String HIDE_ENTRY_PASSWORD_BUTTON_TEXT = "Hide";
@@ -163,13 +163,18 @@ public class MainWindow extends JFrame implements ActionListener {
             throw new IllegalArgumentException("passwordStoreList must not be null");
         }
         _pwsafe = pwsafe;
+        setPasswordStoreList(passwordStoreList);
+        // Create and populate dialog controls
+        setup();
+    }
+
+    private void setPasswordStoreList(PasswordStoreList passwordStoreList) {
         _passwordStoreList = passwordStoreList;
         // Create an empty initial store at first startup
         if (_passwordStoreList.isEmpty()) {
             _passwordStoreList.addStore(DEFAULT_NEW_STORE_NAME);
+            setNeedsSaveToDisk(true);
         }
-        // Create and populate dialog controls
-        setup();
     }
 
     private void setup() {
@@ -199,7 +204,7 @@ public class MainWindow extends JFrame implements ActionListener {
         Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _saveToDiskButton = makeButton(box, SAVE_TO_DISK_BUTTON_TEXT, KeyEvent.VK_S,
+        _saveToDiskButton = makeButton(box, SAVE_TO_DISK_BUTTON_TEXT, KeyEvent.VK_W,
                 ButtonAction.SAVE_TO_DISK);
         _reloadFromDiskButton = makeButton(box, RELOAD_FROM_DISK_BUTTON_TEXT, KeyEvent.VK_K,
                 ButtonAction.RELOAD_FROM_DISK);
@@ -215,9 +220,10 @@ public class MainWindow extends JFrame implements ActionListener {
     }
 
     private void updateSaveLoadButtonState() {
-        // These would both be no-ops if there have been no changes since last load
-        _saveToDiskButton.setEnabled(_needsSaveToDisk);
-        _reloadFromDiskButton.setEnabled(_needsSaveToDisk);
+        if (_saveToDiskButton != null) { // may be called at startup before these are created
+            _saveToDiskButton.setEnabled(_needsSaveToDisk);
+            _reloadFromDiskButton.setEnabled(true);
+        }
     }
 
     private Component createPasswordStoreListAndEntryListPanel() {
@@ -242,8 +248,11 @@ public class MainWindow extends JFrame implements ActionListener {
         JPanel panel = new JPanel(gridbag);
         GridBagConstraints c = new GridBagConstraints();
 
-        final Insets zeroInsets = new Insets(0, 0, 0, 0);
-        final Insets textFieldInsets = new Insets(2, 2, 2, 2);
+        // new Insets(top, left, bottom, right)
+        final Insets textFieldLabelInsets = new Insets(0, 2, 0, 0);
+        final Insets timestampLabelLabelInsets = new Insets(0, 2, 2, 0);
+        final Insets timestampLabelInsets = new Insets(0, 0, 2, 0);
+        final Insets textFieldInsets = new Insets(2, 2, 0, 2);
         final int labelRightPad = 5;
 
         // Column 1
@@ -252,18 +261,27 @@ public class MainWindow extends JFrame implements ActionListener {
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
-        c.insets = zeroInsets;
         c.anchor = GridBagConstraints.WEST;
         c.ipadx = labelRightPad;
 
+        // Create fields to be labelled so we can set mnemonics on the labels
+        _entryNameField = new JTextField();
+        _entryUserIDField = new JTextField();
+        _entryAdditionalInfoField = new JTextArea();
+
         c.gridheight = 2;
-        JLabel label = new JLabel("Name:");
+        c.insets = textFieldLabelInsets;
+        JLabel label = new JLabel("Account:");
+        label.setLabelFor(_entryNameField);
+        label.setDisplayedMnemonic(KeyEvent.VK_T);
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy += 2;
 
         c.gridheight = 2;
-        label = new JLabel("User ID:");
+        label = new JLabel("Username:");
+        label.setLabelFor(_entryUserIDField);
+        label.setDisplayedMnemonic(KeyEvent.VK_U);
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy += 2;
@@ -275,7 +293,9 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy += 2;
 
         c.gridheight = 2;
-        label = new JLabel("Additional info:");
+        label = new JLabel("Info:");
+        label.setLabelFor(_entryAdditionalInfoField);
+        label.setDisplayedMnemonic(KeyEvent.VK_I);
         gridbag.setConstraints(label, c);
         panel.add(label);
 
@@ -290,7 +310,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.insets = textFieldInsets;
         c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
-        _entryNameField = new JTextField();
+        // Field created above, just add to layout
         gridbag.setConstraints(_entryNameField, c);
         panel.add(_entryNameField);
         c.gridy++;
@@ -298,7 +318,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridwidth = 1;
         c.weightx = 0.0;
         c.ipadx = labelRightPad;
-        c.insets = zeroInsets;
+        c.insets = timestampLabelLabelInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Created:");
@@ -312,7 +332,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.insets = textFieldInsets;
         c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
-        _entryUserIDField = new JTextField();
+        // Field created above, just add to layout
         gridbag.setConstraints(_entryUserIDField, c);
         panel.add(_entryUserIDField);
         c.gridy++;
@@ -320,7 +340,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridwidth = 1;
         c.weightx = 0.0;
         c.ipadx = labelRightPad;
-        c.insets = zeroInsets;
+        c.insets = timestampLabelLabelInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Changed:");
@@ -331,8 +351,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridwidth = 2;
         c.weightx = 1.0;
         c.ipadx = 0;
-        // c.insets = textFieldInsets;
-        c.insets = zeroInsets;
+        c.insets = textFieldInsets;
         c.anchor = GridBagConstraints.SOUTH;
         c.fill = GridBagConstraints.HORIZONTAL;
         Component passwordFieldButtons = createPasswordStoreEntryPasswordFieldAndButtons();
@@ -343,7 +362,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridwidth = 1;
         c.weightx = 0.0;
         c.ipadx = labelRightPad;
-        c.insets = zeroInsets;
+        c.insets = timestampLabelLabelInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         label = new JLabel("Changed:");
@@ -358,7 +377,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.insets = textFieldInsets;
         c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.BOTH;
-        _entryAdditionalInfoField = new JTextArea();
+        // Field created above, just add to layout
         _entryAdditionalInfoField.setLineWrap(false);
         // _entryAdditionalInfoField.setWrapStyleWord(true); // true - break on whitespace only
         JScrollPane scrollPane = new JScrollPane(_entryAdditionalInfoField);
@@ -369,7 +388,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridwidth = 1;
         c.weighty = 0.0;
         c.weightx = 0.0;
-        c.insets = zeroInsets;
+        c.insets = timestampLabelLabelInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
         c.ipadx = labelRightPad;
@@ -382,7 +401,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.weightx = 0.0;
         c.weighty = 0.0;
         c.ipadx = 0;
-        c.insets = zeroInsets;
+        c.insets = timestampLabelInsets;
         c.gridx++;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
@@ -426,7 +445,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.gridy = 0;
 
         c.weightx = 1.0;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
         _entryPasswordField = new JPasswordField(PASSWORD_FIELD_COLUMNS);
         _entryPasswordField.setEditable(false);
@@ -501,7 +520,7 @@ public class MainWindow extends JFrame implements ActionListener {
         Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _saveEntryButton    = makeButton(box, SAVE_ENTRY_BUTTON_TEXT,    KeyEvent.VK_V, ButtonAction.SAVE_ENTRY);
+        _saveEntryButton    = makeButton(box, SAVE_ENTRY_BUTTON_TEXT,    KeyEvent.VK_S, ButtonAction.SAVE_ENTRY);
         _discardEntryButton = makeButton(box, DISCARD_ENTRY_BUTTON_TEXT, KeyEvent.VK_Y, ButtonAction.DISCARD_ENTRY);
 
         return box;
@@ -559,7 +578,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
         _addEntryButton    = makeButton(box, ADD_ENTRY_BUTTON_TEXT,    KeyEvent.VK_A, ButtonAction.ADD_ENTRY);
         _removeEntryButton = makeButton(box, REMOVE_ENTRY_BUTTON_TEXT, KeyEvent.VK_D, ButtonAction.REMOVE_ENTRY);
-        _viewEntryButton   = makeButton(box, VIEW_ENTRY_BUTTON_TEXT,   KeyEvent.VK_O, ButtonAction.VIEW_ENTRY);
+        _viewEntryButton   = makeButton(box, VIEW_ENTRY_BUTTON_TEXT,   KeyEvent.VK_V, ButtonAction.VIEW_ENTRY);
 
         return box;
     }
@@ -618,7 +637,7 @@ public class MainWindow extends JFrame implements ActionListener {
         Box hbox = Box.createHorizontalBox();
         _addStoreButton    = makeButton(hbox, ADD_STORE_BUTTON_TEXT,    -1,                     ButtonAction.ADD_STORE);
         _removeStoreButton = makeButton(hbox, REMOVE_STORE_BUTTON_TEXT, -1,                     ButtonAction.REMOVE_STORE);
-        _lockOrUnlockStoreButton = makeButton(hbox, UNLOCK_STORE_BUTTON_TEXT, KeyEvent.VK_U,    ButtonAction.LOCK_OR_UNLOCK_STORE);
+        _lockOrUnlockStoreButton = makeButton(hbox, UNLOCK_STORE_BUTTON_TEXT, KeyEvent.VK_L,    ButtonAction.LOCK_OR_UNLOCK_STORE);
         box.add(hbox);
 
         hbox = Box.createHorizontalBox();
@@ -880,7 +899,7 @@ public class MainWindow extends JFrame implements ActionListener {
             boolean hasKey = store.hasKey();
             _lockOrUnlockStoreButton.setEnabled(isLocked || hasKey);
             _lockOrUnlockStoreButton.setText(isLocked ? UNLOCK_STORE_BUTTON_TEXT : LOCK_STORE_BUTTON_TEXT);
-            _lockOrUnlockStoreButton.setMnemonic(isLocked ? KeyEvent.VK_U : KeyEvent.VK_L);
+            _lockOrUnlockStoreButton.setMnemonic(isLocked ? KeyEvent.VK_L : KeyEvent.VK_L);
             _changeStorePasswordButton.setEnabled(!isLocked);
             _changeStorePasswordButton.setText((isLocked || hasKey) ? CHANGE_STORE_PASSWORD_BUTTON_TEXT
                                                                     : SET_STORE_PASSWORD_BUTTON_TEXT);
@@ -1043,21 +1062,21 @@ public class MainWindow extends JFrame implements ActionListener {
     }
 
     private void reloadFromDisk() {
-        // Button shouldn't be enabled unless things have changed since last load
-        assert (_needsSaveToDisk);
-        if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
+        if ((!_needsSaveToDisk) || (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
                 "Reload and discard changes?",
                 "Confirm reload",
                 JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE)) {
+                JOptionPane.WARNING_MESSAGE))) {
+            PasswordStoreList newStoreList;
             try {
                 // This will automatically destroy existing secrets
-                _passwordStoreList = _pwsafe.load();
+                newStoreList = _pwsafe.load();
             } catch (DatastoreFileException e) {
                 JOptionPane.showMessageDialog(this, "Reload failed:\n" + e.toString());
                 return;
             }
             setNeedsSaveToDisk(false);
+            setPasswordStoreList(newStoreList);
             JOptionPane.showMessageDialog(this, "Reloaded ok");
             reloadPasswordStoreList(null);
             reloadPasswordStoreEntryList(null);
