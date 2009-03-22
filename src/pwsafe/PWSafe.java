@@ -45,7 +45,7 @@ public class PWSafe {
         }
     }
 
-    public void load() throws DatastoreFileException {
+    public PasswordStoreList load() throws DatastoreFileException {
         // Destroy any existing secrets first
         if (_passwordStores != null) {
             _passwordStores.destroySecrets();
@@ -66,6 +66,7 @@ public class PWSafe {
         } else {
             _passwordStores = new PasswordStoreList();
         }
+        return _passwordStores;
     }
 
     public void save() throws DatastoreFileException {

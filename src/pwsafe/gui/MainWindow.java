@@ -110,7 +110,7 @@ public class MainWindow extends JFrame implements ActionListener {
     }
 
 // Underlying data store
-    private final PasswordStoreList _passwordStoreList;
+    private PasswordStoreList _passwordStoreList;
     private final PWSafe _pwsafe;
     private boolean _needsSaveToDisk = false;
 
@@ -181,7 +181,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
         mainContentPane.add(createPasswordStoreListAndEntryListPanel(), BorderLayout.WEST);
         mainContentPane.add(createPasswordStoreEntryPanel(), BorderLayout.CENTER);
-        mainContentPane.add(createSaveLoadCancelButtonPanel(), BorderLayout.SOUTH);
+        mainContentPane.add(createSaveLoadExitButtonPanel(), BorderLayout.SOUTH);
 
         setContentPane(mainContentPane);
 
@@ -189,12 +189,13 @@ public class MainWindow extends JFrame implements ActionListener {
 
         reloadPasswordStoreList(null);
         reloadPasswordStoreEntryList(null);
+        updateSaveLoadButtonState();
 
         // Auto-size based on components
         pack();
     }
 
-    private Component createSaveLoadCancelButtonPanel() {
+    private Component createSaveLoadExitButtonPanel() {
         Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
@@ -206,6 +207,17 @@ public class MainWindow extends JFrame implements ActionListener {
                 ButtonAction.EXIT);
 
         return box;
+    }
+
+    private void setNeedsSaveToDisk(boolean needsSaveToDisk) {
+        _needsSaveToDisk = needsSaveToDisk;
+        updateSaveLoadButtonState();
+    }
+
+    private void updateSaveLoadButtonState() {
+        // These would both be no-ops if there have been no changes since last load
+        _saveToDiskButton.setEnabled(_needsSaveToDisk);
+        _reloadFromDiskButton.setEnabled(_needsSaveToDisk);
     }
 
     private Component createPasswordStoreListAndEntryListPanel() {
@@ -618,7 +630,7 @@ public class MainWindow extends JFrame implements ActionListener {
         }
         // Successfully unlocked
         assert (!store.isLocked());
-        _needsSaveToDisk = true;
+        setNeedsSaveToDisk(true);
         reloadPasswordStoreList(store);
         reloadPasswordStoreEntryList(null);
     }
@@ -635,7 +647,7 @@ public class MainWindow extends JFrame implements ActionListener {
         }
         // Successfully locked
         assert (store.isLocked());
-        _needsSaveToDisk = true;
+        setNeedsSaveToDisk(true);
         reloadPasswordStoreList(store);
         reloadPasswordStoreEntryList(null);
     }
@@ -653,7 +665,7 @@ public class MainWindow extends JFrame implements ActionListener {
         assert (password.length != 0);
         // Update the store object - it will store the password for use when locking
         store.setKey(new EncryptionKey(password));
-        _needsSaveToDisk = true;
+        setNeedsSaveToDisk(true);
         // Reload list because it changes the status for new stores
         reloadPasswordStoreList(store);
     }
@@ -678,7 +690,7 @@ public class MainWindow extends JFrame implements ActionListener {
                 "Enter new name for store:", "Rename store", JOptionPane.QUESTION_MESSAGE);
         if (newStoreName != null && !"".equals(newStoreName)) {
             store.setStoreName(newStoreName);
-            _needsSaveToDisk = true;
+            setNeedsSaveToDisk(true);
             reloadPasswordStoreList(store);
         }
     }
@@ -692,7 +704,7 @@ public class MainWindow extends JFrame implements ActionListener {
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE)) {
             _passwordStoreList.removeStore(store);
-            _needsSaveToDisk = true;
+            setNeedsSaveToDisk(true);
             // TODO: select the next lowest entry rather than going back to the first
             reloadPasswordStoreList(null);
             reloadPasswordStoreEntryList(null);
@@ -739,7 +751,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private void addNewStore() {
         PasswordStore newStore = _passwordStoreList.addStore(DEFAULT_NEW_STORE_NAME);
-        _needsSaveToDisk = true;
+        setNeedsSaveToDisk(true);
         reloadPasswordStoreList(newStore);
         reloadPasswordStoreEntryList(null);
     }
@@ -965,9 +977,11 @@ public class MainWindow extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Save failed:\n" + e.toString());
             return;
         }
-        _needsSaveToDisk = false;
+        setNeedsSaveToDisk(false);
         JOptionPane.showMessageDialog(this, "Saved ok");
-        // TODO: refresh UI - store list (because serialization automatically locks any unlocked stores)
+        // Needed because serialization automatically locks any unlocked stores
+        reloadPasswordStoreList((PasswordStore) _storeList.getSelectedValue());
+        reloadPasswordStoreEntryList(null);
     }
 
     private void reloadFromDisk() {
@@ -980,14 +994,15 @@ public class MainWindow extends JFrame implements ActionListener {
                 JOptionPane.WARNING_MESSAGE)) {
             try {
                 // This will automatically destroy existing secrets
-                _pwsafe.load();
+                _passwordStoreList = _pwsafe.load();
             } catch (DatastoreFileException e) {
                 JOptionPane.showMessageDialog(this, "Reload failed:\n" + e.toString());
                 return;
             }
-            _needsSaveToDisk = false;
+            setNeedsSaveToDisk(false);
             JOptionPane.showMessageDialog(this, "Reloaded ok");
-            // TODO: refresh UI - store list
+            reloadPasswordStoreList(null);
+            reloadPasswordStoreEntryList(null);
         }
     }
 
