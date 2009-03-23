@@ -56,20 +56,33 @@ public class Attachment implements Serializable, Comparable<Attachment> {
      * @param description the description of this item, must not be null, can be empty
      * @throws IllegalArgumentException if any argument is null, or if filename is empty
      */
-    public Attachment(final String filename, final byte[] fileContent, final String description) {
+    public Attachment(final String filename) {
         final Date now = new Date();
         checkFilename(filename);
-        if (fileContent == null) {
-            throw new IllegalArgumentException("fileContent must not be null");
-        }
-        if (description == null) {
-            throw new IllegalArgumentException("description must not be null");
-        }
         _filename = filename;
-        _fileContent = fileContent;
-        _description = description;
+        _fileContent = new byte[0];
+        _description = "";
         _attachmentCreated = now;
         _fileContentLastChanged = now;
+    }
+
+    /**
+     * Construct an Attachment by deep-copying another Attachment
+     */
+    private Attachment(final Attachment other) {
+        _filename               =          other._filename;
+        _attachmentCreated      = (Date)   other._attachmentCreated.clone();
+        _fileContent            = (byte[]) other._fileContent.clone();
+        _fileContentLastChanged = (Date)   other._fileContentLastChanged.clone();
+        _description            =          other._description;
+    }
+
+    /**
+     * Deep-copy this Attachment
+     */
+    @Override
+    public Attachment clone() {
+        return new Attachment(this);
     }
 
     /**
@@ -266,11 +279,23 @@ public class Attachment implements Serializable, Comparable<Attachment> {
      */
     @Override
     public String toString() {
-        // TODO: improve this or use a list that can show two columns
-        return _filename.substring(0, Math.min(20, _filename.length()))
-            + "("
-            + _description.substring(0, Math.min(20, _description.length()))
-            + ")";
+        StringBuilder b = new StringBuilder();
+        b.append(abbreviate(_filename, 20));
+        if (_description.length() > 0) {
+            b.append(" (");
+            b.append(abbreviate(_description, 20));
+            b.append(')');
+        }
+        return b.toString();
+    }
+
+    private String abbreviate(String s, int maxLength) {
+        int actualLen = s.length();
+        if (actualLen <= maxLength) {
+            return s;
+        }
+        String continuer = "...";
+        return s.substring(0, maxLength - continuer.length()) + continuer;
     }
 
     /**

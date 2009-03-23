@@ -62,8 +62,9 @@ public class MainWindow extends JFrame implements ActionListener {
 
 // User-visible text
     private static final String TITLE = "Password Safe";
-    private static final String DEFAULT_NEW_ENTRY_NAME = "New entry";
     private static final String DEFAULT_NEW_STORE_NAME = "New store";
+    private static final String DEFAULT_NEW_ENTRY_NAME = "New entry";
+    private static final String DEFAULT_NEW_ATTACHMENT_NAME = "New file";
     // Main save/load/cancel buttons
     private static final String SAVE_TO_DISK_BUTTON_TEXT = "Write to disk";
     private static final String RELOAD_FROM_DISK_BUTTON_TEXT = "Reload from disk";
@@ -160,6 +161,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private JButton _discardEntryButton;
 
 // Attachment list
+    private AttachmentList _entryAttachmentListCopy;
     private JList _attachmentList;
     private JButton _addAttachmentButton;
     private JButton _removeAttachmentButton;
@@ -205,15 +207,13 @@ public class MainWindow extends JFrame implements ActionListener {
 
         // Top-level panel inside this JFrame
         JPanel mainContentPane = new JPanel(new BorderLayout());
-        mainContentPane.setBorder(BorderFactory.createLineBorder(Color.black));
+        // mainContentPane.setBorder(BorderFactory.createLineBorder(Color.black));
 
         mainContentPane.add(createPasswordStoreListAndEntryListPanel(), BorderLayout.WEST);
         mainContentPane.add(createPasswordStoreEntryPanel(), BorderLayout.CENTER);
         mainContentPane.add(createSaveLoadExitButtonPanel(), BorderLayout.SOUTH);
 
         setContentPane(mainContentPane);
-
-        // TODO: getRootPane().setDefaultButton(someButton)
 
         reloadPasswordStoreList(null);
         reloadPasswordStoreEntryList(null);
@@ -225,7 +225,6 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private Component createSaveLoadExitButtonPanel() {
         Box box = Box.createHorizontalBox();
-        box.setBorder(BorderFactory.createLineBorder(Color.black));
 
         _saveToDiskButton = makeButton(box, SAVE_TO_DISK_BUTTON_TEXT, KeyEvent.VK_W,
                 ButtonAction.SAVE_TO_DISK);
@@ -251,7 +250,6 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private Component createPasswordStoreListAndEntryListPanel() {
         Box box = Box.createVerticalBox();
-        box.setBorder(BorderFactory.createLineBorder(Color.black));
         box.add(createPasswordStoreListPanel());
         box.add(createPasswordStoreEntryListPanel());
         return box;
@@ -259,7 +257,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private Component createPasswordStoreEntryPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createLineBorder(Color.black));
+        // panel.setBorder(BorderFactory.createLineBorder(Color.black));
         panel.add(createPasswordStoreEntryEditFields(), BorderLayout.CENTER);
         panel.add(createPasswordStoreEntrySaveButtons(), BorderLayout.SOUTH);
         setPasswordStoreEntryEditFieldsEnabled(false);
@@ -409,6 +407,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.fill = GridBagConstraints.BOTH;
         // Field created above, just add to layout
         _entryAdditionalInfoField.setLineWrap(false);
+        _entryAdditionalInfoField.setRows(4);
         // _entryAdditionalInfoField.setWrapStyleWord(true); // true - break on whitespace only
         JScrollPane scrollPane = new JScrollPane(_entryAdditionalInfoField);
         gridbag.setConstraints(scrollPane, c);
@@ -434,7 +433,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.insets = textFieldInsets;
         c.anchor = GridBagConstraints.CENTER;
         c.fill = GridBagConstraints.BOTH;
-        Component attachmentsPanel = createAttachmentsPanel();
+        Component attachmentsPanel = createAttachmentListPanel();
         gridbag.setConstraints(attachmentsPanel, c);
         panel.add(attachmentsPanel);
         c.gridy++;
@@ -474,7 +473,6 @@ public class MainWindow extends JFrame implements ActionListener {
         gridbag.setConstraints(_entryAdditionalInfoLastChangedField, c);
         panel.add(_entryAdditionalInfoLastChangedField);
 
-        panel.setBorder(BorderFactory.createLineBorder(Color.black));
         return panel;
     }
 
@@ -531,11 +529,12 @@ public class MainWindow extends JFrame implements ActionListener {
     /**
      * List of attachments in the currently-selected store entry plus control buttons
      */
-    private Component createAttachmentsPanel() {
+    private Component createAttachmentListPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createLineBorder(Color.black));
+
         panel.add(createAttachmentListButtons(), BorderLayout.NORTH);
         panel.add(createAttachmentList(), BorderLayout.CENTER);
+
         return panel;
     }
 
@@ -553,7 +552,7 @@ public class MainWindow extends JFrame implements ActionListener {
                         int index = _attachmentList.locationToIndex(e.getPoint());
                         Attachment attachment = (Attachment) _attachmentList.getModel().getElementAt(index);
                         if (attachment != null) {
-                            // TODO: viewSelectedAttachment();
+                            viewSelectedAttachment(false);
                         }
                     }
                 }
@@ -578,7 +577,6 @@ public class MainWindow extends JFrame implements ActionListener {
      */
     private Component createAttachmentListButtons() {
         Box box = Box.createHorizontalBox();
-        box.setBorder(BorderFactory.createLineBorder(Color.black));
 
         _addAttachmentButton    = makeButton(box, ADD_ATTACHMENT_BUTTON_TEXT,    -1, ButtonAction.ADD_ATTACHMENT);
         _removeAttachmentButton = makeButton(box, REMOVE_ATTACHMENT_BUTTON_TEXT, -1, ButtonAction.REMOVE_ATTACHMENT);
@@ -586,7 +584,6 @@ public class MainWindow extends JFrame implements ActionListener {
 
         return box;
     }
-
 
     private void clearPasswordStoreEntryEditFields() {
         _entryCreatedField.setText(null);
@@ -597,6 +594,7 @@ public class MainWindow extends JFrame implements ActionListener {
         _entryPasswordLastChangedField.setText(null);
         _entryAdditionalInfoField.setText(null);
         _entryAdditionalInfoLastChangedField.setText(null);
+        ((DefaultListModel) _attachmentList.getModel()).clear();
         setPasswordStoreEntryPasswordPlaintextVisible(false);
     }
 
@@ -625,7 +623,6 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private Component createPasswordStoreEntrySaveButtons() {
         Box box = Box.createHorizontalBox();
-        box.setBorder(BorderFactory.createLineBorder(Color.black));
 
         _saveEntryButton    = makeButton(box, SAVE_ENTRY_BUTTON_TEXT,    KeyEvent.VK_S, ButtonAction.SAVE_ENTRY);
         _discardEntryButton = makeButton(box, DISCARD_ENTRY_BUTTON_TEXT, KeyEvent.VK_Y, ButtonAction.DISCARD_ENTRY);
@@ -638,7 +635,7 @@ public class MainWindow extends JFrame implements ActionListener {
      */
     private Component createPasswordStoreEntryListPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createLineBorder(Color.black));
+        // panel.setBorder(BorderFactory.createLineBorder(Color.black));
         panel.add(createPasswordStoreEntryListButtons(), BorderLayout.NORTH);
         panel.add(createPasswordStoreEntryList(), BorderLayout.CENTER);
         return panel;
@@ -672,6 +669,7 @@ public class MainWindow extends JFrame implements ActionListener {
                     enableEntryListAndButtons();
                 }
             });
+        // _entryList.setVisibleRowCount(3);
         JScrollPane pane = new JScrollPane(_entryList);
         return pane;
     }
@@ -681,7 +679,6 @@ public class MainWindow extends JFrame implements ActionListener {
      */
     private Component createPasswordStoreEntryListButtons() {
         Box box = Box.createHorizontalBox();
-        box.setBorder(BorderFactory.createLineBorder(Color.black));
 
         _addEntryButton    = makeButton(box, ADD_ENTRY_BUTTON_TEXT,    KeyEvent.VK_A, ButtonAction.ADD_ENTRY);
         _removeEntryButton = makeButton(box, REMOVE_ENTRY_BUTTON_TEXT, KeyEvent.VK_D, ButtonAction.REMOVE_ENTRY);
@@ -695,7 +692,7 @@ public class MainWindow extends JFrame implements ActionListener {
      */
     private Component createPasswordStoreListPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createLineBorder(Color.black));
+        // panel.setBorder(BorderFactory.createLineBorder(Color.black));
         panel.add(createPasswordStoreListButtons(), BorderLayout.NORTH);
         panel.add(createPasswordStoreList(), BorderLayout.CENTER);
         return panel;
@@ -730,6 +727,7 @@ public class MainWindow extends JFrame implements ActionListener {
                     reloadPasswordStoreEntryList(null);
                 }
             });
+        _storeList.setVisibleRowCount(3);
         JScrollPane pane = new JScrollPane(_storeList);
         return pane;
     }
@@ -739,7 +737,6 @@ public class MainWindow extends JFrame implements ActionListener {
      */
     private Component createPasswordStoreListButtons() {
         Box box = Box.createVerticalBox();
-        box.setBorder(BorderFactory.createLineBorder(Color.black));
 
         Box hbox = Box.createHorizontalBox();
         _addStoreButton    = makeButton(hbox, ADD_STORE_BUTTON_TEXT,    -1,                     ButtonAction.ADD_STORE);
@@ -777,6 +774,9 @@ public class MainWindow extends JFrame implements ActionListener {
         // No choice but to create a String object with the possibly-secret data here
         char[] additional = entry.getAdditionalInfo();
         _entryAdditionalInfoField.setText(additional == null ? null : new String(additional));
+        // We clone the whole attachment list so we can freely modify it and only keep changes if Save Entry is pressed
+        _entryAttachmentListCopy = entry.getAttachmentList().clone();
+        reloadAttachmentList(null);
         setPasswordStoreEntryEditFieldsEnabled(true);
         setPasswordStoreEntryListButtonsEnabled(false);
         setPasswordStoreListButtonsEnabled(false);
@@ -870,8 +870,9 @@ public class MainWindow extends JFrame implements ActionListener {
     private void renameSelectedStore() {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         assert (store != null);
-        String newStoreName = JOptionPane.showInputDialog(this,
-                "Enter new name for store:", "Rename store", JOptionPane.QUESTION_MESSAGE);
+        String newStoreName = (String) JOptionPane.showInputDialog(this,
+                "Enter new name for store:", "Rename store", JOptionPane.QUESTION_MESSAGE,
+                null, null, store.getStoreName());
         if (newStoreName != null && !"".equals(newStoreName)) {
             store.setStoreName(newStoreName);
             setNeedsSaveToDisk(true);
@@ -1064,18 +1065,85 @@ public class MainWindow extends JFrame implements ActionListener {
             if ("".equals(entryName)) {
                 entryName = entry.getDisplayName();
             }
-            entry.setEntryFields(entryName,
-                                 _entryUserIDField.getText(),
-                                 _entryPasswordField.getPassword(),
-                                 _entryAdditionalInfoField.getText().toCharArray());
+            entry.setAllFields(entryName,
+                               _entryUserIDField.getText(),
+                               _entryPasswordField.getPassword(),
+                               _entryAdditionalInfoField.getText().toCharArray(),
+                               _entryAttachmentListCopy);
+            // This is now the responsibility of the entry, don't clear it here
+            _entryAttachmentListCopy = null;
         } else if (_isNewEntry) {
             // Discarding newly-added entry, remove completely
             removeSelectedEntry(entry);
             entry = null;
         }
+        if (_entryAttachmentListCopy != null) {
+            // Not saved, so discard the private data in the copy
+            _entryAttachmentListCopy.destroySecrets();
+            _entryAttachmentListCopy = null;
+        }
         clearPasswordStoreEntryEditFields();
         _isNewEntry = false;
         return entry;
+    }
+
+    private void addNewAttachment() {
+        assert (_entryAttachmentListCopy != null);
+        Attachment newAttachment = _entryAttachmentListCopy.addAttachment(DEFAULT_NEW_ATTACHMENT_NAME);
+        reloadAttachmentList(newAttachment);
+        viewSelectedAttachment(true);
+    }
+
+    private void viewSelectedAttachment(boolean isNewAttachment) {
+        Attachment attachment = (Attachment) _attachmentList.getSelectedValue();
+        assert (attachment != null);
+        AttachmentDialog dialog = new AttachmentDialog(this, attachment, isNewAttachment ? "Create new attachment"
+                                                                                         : "Edit attachment");
+        if (!dialog.showDialog()) {
+            // Cancelled edit
+            if (isNewAttachment) {
+                // Was newly-added - discard
+                _entryAttachmentListCopy.removeAttachment(attachment);
+                attachment = null;
+            }
+        }
+        reloadAttachmentList(attachment);
+    }
+
+    private void confirmAndRemoveSelectedAttachment() {
+        assert (_entryAttachmentListCopy != null);
+        Attachment attachment = (Attachment) _attachmentList.getSelectedValue();
+        assert (attachment != null);
+        if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(this,
+                "Permanently delete attachment named '" + attachment.getFilename() + "'?",
+                "Confirm attachment delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE)) {
+            _entryAttachmentListCopy.removeAttachment(attachment);
+            attachment = null;
+            // TODO: select the next lowest entry rather than going back to the first
+            reloadAttachmentList(null);
+        }
+    }
+
+    /**
+     * @param attachmentToSelect attachment to select after reloading, or null to select first item.
+     *         To maintain current selection, use {@code reloadAttachmentList((Attachment) _attachmentList.getSelectedValue())}.
+     */
+    private void reloadAttachmentList(Attachment attachmentToSelect) {
+        assert (_entryAttachmentListCopy != null);
+        DefaultListModel listModel = new DefaultListModel();
+        for (Attachment attachment : _entryAttachmentListCopy.getAttachments()) {
+            listModel.addElement(attachment);
+        }
+        _attachmentList.setModel(listModel);
+
+        if (attachmentToSelect != null) {
+            assert (!listModel.isEmpty());
+            _attachmentList.setSelectedValue(attachmentToSelect, true);
+        } else if (!listModel.isEmpty()) {
+            _attachmentList.setSelectedIndex(0);
+        }
     }
 
     /**
@@ -1133,13 +1201,13 @@ public class MainWindow extends JFrame implements ActionListener {
             changeSelectedEntryPassword();
             break;
         case VIEW_ATTACHMENT:
-            // TODO
+            viewSelectedAttachment(false);
             break;
         case ADD_ATTACHMENT:
-            // TODO
+            addNewAttachment();
             break;
         case REMOVE_ATTACHMENT:
-            // TODO
+            confirmAndRemoveSelectedAttachment();
             break;
         default:
             break;
@@ -1229,6 +1297,10 @@ public class MainWindow extends JFrame implements ActionListener {
         // Could auto-save here, for now we just explicitly zero keys/passwords in the stores
         try {
             _passwordStoreList.destroySecrets();
+            // Should be cleared already, but check just in case
+            if (_entryAttachmentListCopy != null) {
+                _entryAttachmentListCopy.destroySecrets();
+            }
         } finally {
             super.dispose();
         }

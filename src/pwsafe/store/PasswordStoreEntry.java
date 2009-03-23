@@ -108,12 +108,14 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
      * @param password the account password, can be empty but not null
      * @param additionalInfo free-form text to record any extra login info for this account,
      *         e.g. additional security questions, can be empty but not null
+     * @param attachmentList the new attachment list, can be empty but not null
      * @throws IllegalArgumentException if any argument is null, or if displayName is empty
      */
-    public void setEntryFields(final String displayName,
-                               final String userID,
-                               final char[] password,
-                               final char[] additionalInfo) {
+    public void setAllFields(final String displayName,
+                             final String userID,
+                             final char[] password,
+                             final char[] additionalInfo,
+                             final AttachmentList attachmentList) {
         final Date now = new Date();
         if (userID == null) {
             throw new IllegalArgumentException("userID must not be null");
@@ -124,11 +126,15 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
         if (additionalInfo == null) {
             throw new IllegalArgumentException("additionalInfo must not be null");
         }
+        if (attachmentList == null) {
+            throw new IllegalArgumentException("attachmentList must not be null");
+        }
         checkNotDestroyed();
         setDisplayName(displayName);
         setUserID(userID, now);
         setPassword(password, now);
         setAdditionalInfo(additionalInfo, now);
+        setAttachmentList(attachmentList);
     }
 
     /**
@@ -337,6 +343,23 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     }
 
     /**
+     * Set the attachment list (secret) for this record.
+     * The existing attachment list (if any) will be zeroed and discarded.
+     * <p>
+     * <b>IMPORTANT:</b> this stores a reference to the supplied attachment list, it does not make a copy.
+     * The caller should discard their reference to it but leave its contents intact;
+     * this PasswordStoreEntry object assumes responsibility for clearing and discarding the secret data.
+     *
+     * @param attachmentList the new attachment list, can be empty
+     * @throws IllegalStateException if {@link #destroySecrets()} method has been called
+     */
+    private void setAttachmentList(AttachmentList attachmentList) {
+        checkNotDestroyed();
+        clearAttachmentList();
+        _attachmentList = attachmentList;
+    }
+
+    /**
      * Sort by _displayName then by _userID.
      * <p>
      * NOTE: this is inconsistent with equals() in that equals() tests object equality (since it is used for
@@ -405,6 +428,13 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
         }
     }
 
+    private void clearAttachmentList() {
+        if (_attachmentList != null) {
+            _attachmentList.destroySecrets();
+            _attachmentList = null;
+        }
+    }
+
     /**
      * Explicit serialization to guarantee we can handle old versions if implementation evolves
      */
@@ -468,7 +498,7 @@ public final class PasswordStoreEntry implements Serializable, Comparable<Passwo
     public void destroySecrets() {
         clearPassword();
         clearAdditionalInfo();
-        _attachmentList.destroySecrets();
+        clearAttachmentList();
         _destroyed = true;
     }
 

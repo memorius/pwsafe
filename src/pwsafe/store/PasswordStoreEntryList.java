@@ -104,8 +104,12 @@ public final class PasswordStoreEntryList implements Serializable {
         if (entry == null) {
             throw new IllegalArgumentException("entry must not be null");
         }
-        if (!_entries.remove(entry)) {
-            throw new IllegalArgumentException("Entry not present");
+        try {
+            if (!_entries.remove(entry)) {
+                throw new IllegalArgumentException("Entry not present");
+            }
+        } finally {
+            entry.destroySecrets();
         }
     }
 

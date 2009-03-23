@@ -55,6 +55,15 @@ public class PasswordEntryDialog extends JDialog
 
     private static final int PASSWORD_FIELD_COLUMNS = 20;
 
+// Action commands
+    private static enum ButtonAction {
+        OK,
+        CANCEL,
+        SHOW_HIDE_PASSWORDS,
+        GENERATE_PASSWORD
+    }
+
+
     // Set by constructor
     private final boolean _multipleEntry;
     private final boolean _allowEmptyPassword;
@@ -80,14 +89,6 @@ public class PasswordEntryDialog extends JDialog
     private JLabel _generatorBitComplexityField;
     private JButton _generatePasswordButton;
 
-// Action commands
-    private static enum ButtonAction {
-        OK,
-        CANCEL,
-        SHOW_HIDE_PASSWORDS,
-        GENERATE_PASSWORD
-    }
-
     /**
      * Construct a PasswordEntryDialog
      */
@@ -101,6 +102,8 @@ public class PasswordEntryDialog extends JDialog
     }
 
     private void setup() {
+        /* TODO: change to only hide when closed (but clear private data), have a single instance in MainWindow,
+                 set properties as needed for each showing */
         setDefaultCloseOperation(DISPOSE_ON_CLOSE /*DO_NOTHING_ON_CLOSE*/);
         // This is invoked before disposing if closed
         /*
@@ -432,8 +435,8 @@ public class PasswordEntryDialog extends JDialog
         Box box = Box.createHorizontalBox();
         box.setBorder(BorderFactory.createLineBorder(Color.black));
 
-        _okButton     = makeButton(box, OK_BUTTON_TEXT,     KeyEvent.VK_O,      ButtonAction.OK);
-        _cancelButton = makeButton(box, CANCEL_BUTTON_TEXT, KeyEvent.VK_ESCAPE, ButtonAction.CANCEL);
+        _okButton     = makeButton(box, OK_BUTTON_TEXT,     KeyEvent.VK_O, ButtonAction.OK);
+        _cancelButton = makeButton(box, CANCEL_BUTTON_TEXT, KeyEvent.VK_C, ButtonAction.CANCEL);
 
         return box;
     }

@@ -89,8 +89,12 @@ public class PasswordStoreList implements Serializable {
         if (store == null) {
             throw new IllegalArgumentException("store must not be null");
         }
-        if (!_stores.remove(store)) {
-            throw new IllegalArgumentException("Store not present");
+        try {
+            if (!_stores.remove(store)) {
+                throw new IllegalArgumentException("Store not present");
+            }
+        } finally {
+            store.destroySecrets();
         }
     }
 

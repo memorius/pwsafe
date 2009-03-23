@@ -15,7 +15,7 @@ import java.util.List;
  *
  * @author Nick Clarke
  */
-public final class AttachmentList implements Serializable {
+public final class AttachmentList implements Serializable, Cloneable {
     /**
      * serialVersionUID for this class.
      * <p>
@@ -45,6 +45,24 @@ public final class AttachmentList implements Serializable {
      */
     protected AttachmentList() {
         _attachments = new ArrayList<Attachment>();
+    }
+
+    /**
+     * Construct an AttachmentList by deep-copying another AttachmentList
+     */
+    private AttachmentList(final AttachmentList other) {
+        this();
+        for (Attachment attachment : other.getAttachments()) {
+            _attachments.add(attachment.clone());
+        }
+    }
+
+    /**
+     * Deep-copy this AttachmentList
+     */
+    @Override
+    public AttachmentList clone() {
+        return new AttachmentList(this);
     }
 
     /**
@@ -88,7 +106,7 @@ public final class AttachmentList implements Serializable {
      */
     public Attachment addAttachment(String filename) {
         checkNotDestroyed();
-        Attachment attachment = new Attachment(filename, new byte[0], "");
+        Attachment attachment = new Attachment(filename);
         _attachments.add(attachment);
         return attachment;
     }
@@ -105,8 +123,12 @@ public final class AttachmentList implements Serializable {
         if (attachment == null) {
             throw new IllegalArgumentException("attachment must not be null");
         }
-        if (!_attachments.remove(attachment)) {
-            throw new IllegalArgumentException("Attachment not present");
+        try {
+            if (!_attachments.remove(attachment)) {
+                throw new IllegalArgumentException("Attachment not present");
+            }
+        } finally {
+            attachment.destroySecrets();
         }
     }
 
