@@ -535,6 +535,8 @@ public class MainWindow extends JFrame implements ActionListener {
         panel.add(createAttachmentListButtons(), BorderLayout.NORTH);
         panel.add(createAttachmentList(), BorderLayout.CENTER);
 
+        setAttachmentListButtonsEnabled(false);
+
         return panel;
     }
 
@@ -607,6 +609,9 @@ public class MainWindow extends JFrame implements ActionListener {
         _changeEntryPasswordButton.setEnabled(enabled);
         _showOrHideEntryPasswordButton.setEnabled(enabled);
         _copyEntryPasswordButton.setEnabled(enabled);
+    }
+
+    private void setAttachmentListButtonsEnabled(boolean enabled) {
         _attachmentList.setEnabled(enabled);
         _addAttachmentButton.setEnabled(enabled);
         _removeAttachmentButton.setEnabled(enabled);
@@ -1034,6 +1039,14 @@ public class MainWindow extends JFrame implements ActionListener {
         _entryList.setEnabled(storeUnlocked);
     }
 
+    private void enableAttachmentListAndButtons() {
+        boolean anySelected = (_attachmentList.getSelectedValue() != null);
+        _viewAttachmentButton.setEnabled(anySelected);
+        _removeAttachmentButton.setEnabled(anySelected);
+        _addAttachmentButton.setEnabled(true);
+        _attachmentList.setEnabled(true);
+    }
+
     private void setPasswordStoreEntryListButtonsEnabled(boolean enabled) {
         _entryList.setEnabled(enabled);
         _viewEntryButton.setEnabled(enabled);
@@ -1055,6 +1068,7 @@ public class MainWindow extends JFrame implements ActionListener {
      */
     private PasswordStoreEntry closeDisplayedEntry(boolean saveEdits) {
         setPasswordStoreEntryEditFieldsEnabled(false);
+        setAttachmentListButtonsEnabled(false);
         enableStoreListAndButtons();
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         if (entry == null) {
@@ -1138,12 +1152,14 @@ public class MainWindow extends JFrame implements ActionListener {
         }
         _attachmentList.setModel(listModel);
 
+        boolean empty = listModel.isEmpty();
         if (attachmentToSelect != null) {
-            assert (!listModel.isEmpty());
+            assert (!empty);
             _attachmentList.setSelectedValue(attachmentToSelect, true);
-        } else if (!listModel.isEmpty()) {
+        } else if (!empty) {
             _attachmentList.setSelectedIndex(0);
         }
+        enableAttachmentListAndButtons();
     }
 
     /**
