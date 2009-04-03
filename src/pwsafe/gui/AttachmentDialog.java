@@ -66,6 +66,8 @@ public class AttachmentDialog extends JDialog implements ActionListener {
     private JTextField _attachmentFilenameField;
     private JLabel _attachmentCreatedField;
     private JTextArea _attachmentDescriptionField;
+    private JLabel _attachmentContentSizeField;
+    private JLabel _attachmentContentLastChangedField;
     private JButton _okButton;
     private JButton _cancelButton;
     private JButton _loadFileButton;
@@ -134,16 +136,16 @@ public class AttachmentDialog extends JDialog implements ActionListener {
         _attachmentDescriptionField.setText(_attachment.getDescription());
         _attachmentCreatedField.setText(formatDate(_attachment.getAttachmentCreated()));
         _attachmentFileContent = _attachment.getFileContent();
-        // TODO: show info about content
-        // TODO: _attachmentContentLastChangedField.setText(formatDate(_attachment.getFileContentLastChanged()));
+        _attachmentContentSizeField.setText(Integer.toString(_attachmentFileContent.length));
+        _attachmentContentLastChangedField.setText(formatDate(_attachment.getFileContentLastChanged()));
     }
 
     private void clearAttachmentFields() {
         _attachmentFilenameField.setText(null);
         _attachmentDescriptionField.setText(null);
         _attachmentCreatedField.setText(null);
-        // TODO: _attachmentContentLastChangedField.setText(null);
-        // TODO: clear info about content
+        _attachmentContentSizeField.setText(null);
+        _attachmentContentLastChangedField.setText(null);
     }
 
     private Component createAttachmentEditPanel() {
@@ -181,11 +183,18 @@ public class AttachmentDialog extends JDialog implements ActionListener {
         panel.add(label);
         c.gridy += 2;
 
-        c.gridheight = 2;
+        c.gridheight = 1;
         c.insets = textFieldLabelInsets;
         label = new JLabel("Description:");
         label.setLabelFor(_attachmentDescriptionField);
         // label.setDisplayedMnemonic(KeyEvent.VK_?);
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy += 1;
+
+        c.gridheight = 2;
+        c.insets = textFieldLabelInsets;
+        label = new JLabel("File content:");
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy += 2;
@@ -228,7 +237,7 @@ public class AttachmentDialog extends JDialog implements ActionListener {
         c.insets = timestampLabelLabelInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
-        label = new JLabel("Created:");
+        label = new JLabel("Added:");
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy++;
@@ -249,7 +258,27 @@ public class AttachmentDialog extends JDialog implements ActionListener {
         panel.add(scrollPane);
         c.gridy++;
 
-        // TODO - file content length indicator and last changed time
+        c.gridwidth = 1;
+        c.weightx = 0.0;
+        c.ipadx = labelRightPad;
+        c.insets = timestampLabelLabelInsets;
+        c.anchor = GridBagConstraints.SOUTHWEST;
+        c.fill = GridBagConstraints.NONE;
+        label = new JLabel("Size (bytes):");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
+
+        c.gridwidth = 1;
+        c.weightx = 0.0;
+        c.ipadx = labelRightPad;
+        c.insets = timestampLabelLabelInsets;
+        c.anchor = GridBagConstraints.NORTHWEST;
+        c.fill = GridBagConstraints.NONE;
+        label = new JLabel("Changed:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+        c.gridy++;
 
         // Column 3
         c.gridy = 0;
@@ -268,6 +297,20 @@ public class AttachmentDialog extends JDialog implements ActionListener {
         gridbag.setConstraints(_attachmentCreatedField, c);
         panel.add(_attachmentCreatedField);
         c.gridy += 2;
+
+        c.gridwidth = 1;
+        c.anchor = GridBagConstraints.SOUTHWEST;
+        _attachmentContentSizeField = new JLabel(" ");
+        gridbag.setConstraints(_attachmentContentSizeField, c);
+        panel.add(_attachmentContentSizeField);
+        c.gridy++;
+
+        c.gridwidth = 1;
+        c.anchor = GridBagConstraints.NORTHWEST;
+        _attachmentContentLastChangedField = new JLabel(" ");
+        gridbag.setConstraints(_attachmentContentLastChangedField, c);
+        panel.add(_attachmentContentLastChangedField);
+        c.gridy++;
 
         return panel;
     }
@@ -340,6 +383,8 @@ public class AttachmentDialog extends JDialog implements ActionListener {
             _attachmentFilenameField.setText(file.getName());
             clearFileContent();
             _attachmentFileContent = content;
+            _attachmentContentSizeField.setText(Integer.toString(_attachmentFileContent.length));
+            _attachmentContentLastChangedField.setText("Now");
             _fileContentChanged = true;
         }
     }

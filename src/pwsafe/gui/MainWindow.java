@@ -349,7 +349,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.insets = timestampLabelLabelInsets;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
-        label = new JLabel("Created:");
+        label = new JLabel("Added:");
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy++;
