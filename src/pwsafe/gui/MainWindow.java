@@ -84,6 +84,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String SAVE_ENTRY_BUTTON_TEXT = "Save entry";
     private static final String DISCARD_ENTRY_BUTTON_TEXT = "Discard entry changes";
     // Entry editing
+    private static final String COPY_ENTRY_USERID_BUTTON_TEXT = "Copy";
     private static final String SHOW_ENTRY_PASSWORD_BUTTON_TEXT = "Show";
     private static final String HIDE_ENTRY_PASSWORD_BUTTON_TEXT = "Hide";
     private static final String COPY_ENTRY_PASSWORD_BUTTON_TEXT = "Copy";
@@ -113,6 +114,7 @@ public class MainWindow extends JFrame implements ActionListener {
         REMOVE_ENTRY,
         SAVE_ENTRY,
         DISCARD_ENTRY,
+        COPY_ENTRY_USERID,
         SHOW_OR_HIDE_ENTRY_PASSWORD,
         COPY_ENTRY_PASSWORD,
         CHANGE_ENTRY_PASSWORD,
@@ -149,6 +151,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private JLabel _entryCreatedField;
     private JTextField _entryNameField;
     private JTextField _entryUserIDField;
+    private JButton _copyEntryUserIDButton;
     private JLabel _entryUserIDLastChangedField;
     private JPasswordField _entryPasswordField;
     private JLabel _entryPasswordLastChangedField;
@@ -358,11 +361,12 @@ public class MainWindow extends JFrame implements ActionListener {
         c.weightx = 1.0;
         c.ipadx = 0;
         c.insets = textFieldInsets;
-        c.anchor = GridBagConstraints.SOUTHWEST;
+        c.anchor = GridBagConstraints.SOUTH;
         c.fill = GridBagConstraints.HORIZONTAL;
         // Field created above, just add to layout
-        gridbag.setConstraints(_entryUserIDField, c);
-        panel.add(_entryUserIDField);
+        Component userIDFieldAndButtons = createPasswordStoreEntryUserIDFieldAndButtons();
+        gridbag.setConstraints(userIDFieldAndButtons, c);
+        panel.add(userIDFieldAndButtons);
         c.gridy++;
 
         c.gridwidth = 1;
@@ -472,6 +476,41 @@ public class MainWindow extends JFrame implements ActionListener {
         _entryAdditionalInfoLastChangedField = new JLabel(" ");
         gridbag.setConstraints(_entryAdditionalInfoLastChangedField, c);
         panel.add(_entryAdditionalInfoLastChangedField);
+
+        return panel;
+    }
+
+    private Component createPasswordStoreEntryUserIDFieldAndButtons() {
+        GridBagLayout gridbag = new GridBagLayout();
+        JPanel panel = new JPanel(gridbag);
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.weighty = 0.0;
+        c.gridx = 0;
+        c.gridy = 0;
+
+        c.weightx = 1.0;
+        c.anchor = GridBagConstraints.SOUTHWEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        // Already created elsewhere (so we could attach label to it for mnemonic)
+        gridbag.setConstraints(_entryUserIDField, c);
+        panel.add(_entryUserIDField);
+        c.gridx++;
+
+        c.weightx = 0.0;
+        c.anchor = GridBagConstraints.CENTER;
+        c.fill = GridBagConstraints.NONE;
+
+        _copyEntryUserIDButton = makeButton(panel, COPY_ENTRY_USERID_BUTTON_TEXT, -1 /*KeyEvent.VK_C*/,
+                ButtonAction.COPY_ENTRY_USERID);
+        gridbag.setConstraints(_copyEntryUserIDButton, c);
+        c.gridx++;
+
+        Insets buttonMargin;
+        buttonMargin = _copyEntryUserIDButton.getMargin();
+        buttonMargin.left = Math.max(buttonMargin.left - 8, 0);
+        buttonMargin.right = buttonMargin.left;
+        _copyEntryUserIDButton.setMargin(buttonMargin);
 
         return panel;
     }
@@ -603,6 +642,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private void setPasswordStoreEntryEditFieldsEnabled(boolean enabled) {
         _entryNameField.setEditable(enabled);
         _entryUserIDField.setEditable(enabled);
+        _copyEntryUserIDButton.setEnabled(enabled);
         _entryAdditionalInfoField.setEditable(enabled);
         _saveEntryButton.setEnabled(enabled);
         _discardEntryButton.setEnabled(enabled);
@@ -915,6 +955,21 @@ public class MainWindow extends JFrame implements ActionListener {
         }
     }
 
+    private void copySelectedEntryUserID() {
+        PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
+        assert (entry != null);
+        Clipboard cb = getToolkit().getSystemClipboard();
+        try {
+            // Copy from the field rather than the entry, in case it has been edited or is new
+            StringSelection ss = new StringSelection(_entryUserIDField.getText());
+            cb.setContents(ss, ss);
+        } catch (IllegalStateException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to access clipboard:\n" + e.toString());
+            return;
+        }
+    }
+
     private void copySelectedEntryPassword() {
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         assert (entry != null);
@@ -1206,6 +1261,9 @@ public class MainWindow extends JFrame implements ActionListener {
             break;
         case DISCARD_ENTRY:
             reloadPasswordStoreEntryList(closeDisplayedEntry(false));
+            break;
+        case COPY_ENTRY_USERID:
+            copySelectedEntryUserID();
             break;
         case SHOW_OR_HIDE_ENTRY_PASSWORD:
             setPasswordStoreEntryPasswordPlaintextVisible(!_entryPasswordPlaintextVisible);
