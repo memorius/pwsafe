@@ -136,8 +136,12 @@ public class AttachmentDialog extends JDialog implements ActionListener {
         _attachmentDescriptionField.setText(_attachment.getDescription());
         _attachmentCreatedField.setText(formatDate(_attachment.getAttachmentCreated()));
         _attachmentFileContent = _attachment.getFileContent();
-        _attachmentContentSizeField.setText(Integer.toString(_attachmentFileContent.length));
+        setAttachmentContentSizeField();
         _attachmentContentLastChangedField.setText(formatDate(_attachment.getFileContentLastChanged()));
+    }
+
+    private void setAttachmentContentSizeField() {
+        _attachmentContentSizeField.setText(String.format("%d bytes", _attachmentFileContent.length));
     }
 
     private void clearAttachmentFields() {
@@ -264,7 +268,7 @@ public class AttachmentDialog extends JDialog implements ActionListener {
         c.insets = timestampLabelLabelInsets;
         c.anchor = GridBagConstraints.SOUTHWEST;
         c.fill = GridBagConstraints.NONE;
-        label = new JLabel("Size (bytes):");
+        label = new JLabel("Size:");
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy++;
@@ -383,7 +387,7 @@ public class AttachmentDialog extends JDialog implements ActionListener {
             _attachmentFilenameField.setText(file.getName());
             clearFileContent();
             _attachmentFileContent = content;
-            _attachmentContentSizeField.setText(Integer.toString(_attachmentFileContent.length));
+            setAttachmentContentSizeField();
             _attachmentContentLastChangedField.setText("Now");
             _fileContentChanged = true;
         }
