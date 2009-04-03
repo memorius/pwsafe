@@ -37,7 +37,7 @@ import javax.swing.JTextField;
 import pwsafe.store.Attachment;
 
 /**
- * Dialog to view and edit a single Attachment on a PasswordEntry
+ * Modal dialog to view and edit a single Attachment on a PasswordEntry
  *
  * @author Nick Clarke
  */
@@ -81,7 +81,7 @@ public class AttachmentDialog extends JDialog implements ActionListener {
      * @param attachment the attachment to view/edit, must not be null
      */
     public AttachmentDialog(final Frame parent, final Attachment attachment, final String title) {
-        super(parent, title, true);
+        super(parent, title, true /*modal*/);
         if (attachment == null) {
             throw new IllegalArgumentException("attachment must not be null");
         }

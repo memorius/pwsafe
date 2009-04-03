@@ -51,7 +51,7 @@ public class PasswordEntryDialog extends JDialog
     private static final String CANCEL_BUTTON_TEXT = "Cancel";
     private static final String SHOW_PASSWORDS_BUTTON_TEXT = "Show";
     private static final String HIDE_PASSWORDS_BUTTON_TEXT = "Hide";
-    private static final String GENERATE_PASSWORD_BUTTON_TEXT = "Generate Password";
+    private static final String GENERATE_PASSWORD_BUTTON_TEXT = "Generate";
 
     private static final int PASSWORD_FIELD_COLUMNS = 20;
 
@@ -94,7 +94,7 @@ public class PasswordEntryDialog extends JDialog
      */
     public PasswordEntryDialog(final Frame parent, final String title, final boolean multipleEntry,
             final boolean showRandomPasswordGenerator, final boolean allowEmptyPassword) {
-        super(parent, title, true);
+        super(parent, title, true /*modal*/);
         _multipleEntry = multipleEntry;
         _allowEmptyPassword = allowEmptyPassword;
         _randomPasswordGenerator = (showRandomPasswordGenerator ? new RandomPasswordGenerator() : null);
@@ -221,7 +221,7 @@ public class PasswordEntryDialog extends JDialog
         c.gridwidth = 2;
         c.fill = GridBagConstraints.NONE;
         c.anchor = GridBagConstraints.CENTER;
-        JLabel label = new JLabel("Random password generator");
+        JLabel label = new JLabel("Generate random password");
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy++;
@@ -230,19 +230,19 @@ public class PasswordEntryDialog extends JDialog
 
         c.gridwidth = 1;
         c.anchor = GridBagConstraints.WEST;
-        label = new JLabel("Length (characters):");
+        label = new JLabel("Number of characters:");
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy++;
 
         c.anchor = GridBagConstraints.WEST;
-        label = new JLabel("Use lowercase alpha:");
+        label = new JLabel("Use lowercase:");
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy++;
 
         c.anchor = GridBagConstraints.WEST;
-        label = new JLabel("Use uppercase alpha:");
+        label = new JLabel("Use uppercase:");
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy++;
@@ -266,7 +266,7 @@ public class PasswordEntryDialog extends JDialog
         c.gridy++;
 
         c.anchor = GridBagConstraints.WEST;
-        label = new JLabel("Complexity (bits):");
+        label = new JLabel("Bit complexity:");
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy++;
