@@ -136,4 +136,44 @@ public class RandomPasswordGenerator {
         }
         return password;
     }
+
+    /**
+     * Create a generator with length and complexity set by examining an existing password
+     * and which character alphabets appear in it.
+     *
+     * @param password can be null or empty. This method will not copy it or modify it, or store a reference
+     */
+    public static RandomPasswordGenerator configureFromPassword(char[] password) {
+        RandomPasswordGenerator gen = new RandomPasswordGenerator();
+        gen.setUseDigits(false);
+        gen.setUseLowercaseAlpha(false);
+        gen.setUseUppercaseAlpha(false);
+        gen.setUsePunctuation(false);
+
+        if (password == null) {
+            gen.setLength(0);
+        } else {
+            gen.setLength(password.length);
+
+            for (char c : password) {
+                if (DIGITS.indexOf(c) != -1) {
+                    gen.setUseDigits(true);
+                } else if (LOWERCASE_ALPHA.indexOf(c) != -1) {
+                    gen.setUseLowercaseAlpha(true);
+                } else if (UPPERCASE_ALPHA.indexOf(c) != -1) {
+                    gen.setUseUppercaseAlpha(true);
+                } else if (PUNCTUATION.indexOf(c) != -1) {
+                    gen.setUsePunctuation(true);
+                } else {
+                    /* TODO: what do we do with chars in other ranges? This includes spaces.
+                             If there are any, could just treat as using our full alphabet range,
+                             or as using full ascii range, or full unicode range, or just ignore it.
+                             Ignoring for now. */
+                }
+                c = (char) 0;
+            }
+        }
+
+        return gen;
+    }
 }

@@ -45,7 +45,7 @@ import pwsafe.util.RandomPasswordGenerator;
  * @author Nick Clarke
  */
 public class PasswordEntryDialog extends JDialog
-        implements ActionListener, ItemListener, ChangeListener, DocumentListener {
+        implements ActionListener, ItemListener, ChangeListener {
 
     private static final String OK_BUTTON_TEXT = "OK";
     private static final String CANCEL_BUTTON_TEXT = "Cancel";
@@ -75,6 +75,8 @@ public class PasswordEntryDialog extends JDialog
     private JPasswordField _passwordField1;
     private JPasswordField _passwordField2; // only if multipleEntry
     private JPasswordField _passwordField3; // only if multipleEntry
+    private JLabel _effectiveAlphabetSizeField;
+    private JLabel _effectiveBitComplexityField;
     private JButton _showOrHidePasswordsButton;
     private JButton _okButton;
     private JButton _cancelButton;
@@ -91,13 +93,25 @@ public class PasswordEntryDialog extends JDialog
 
     /**
      * Construct a PasswordEntryDialog
+     *
+     * @param oldPassword for configuring random password generator initial settings, or null to use defaults.
+     *         This class will not store a reference to oldPassword or modify it.
      */
     public PasswordEntryDialog(final Frame parent, final String title, final boolean multipleEntry,
-            final boolean showRandomPasswordGenerator, final boolean allowEmptyPassword) {
+            final boolean showRandomPasswordGenerator, final boolean allowEmptyPassword, final char[] oldPassword) {
         super(parent, title, true /*modal*/);
         _multipleEntry = multipleEntry;
         _allowEmptyPassword = allowEmptyPassword;
-        _randomPasswordGenerator = (showRandomPasswordGenerator ? new RandomPasswordGenerator() : null);
+        if (showRandomPasswordGenerator) {
+            if (oldPassword == null || oldPassword.length == 0) {
+                // Default initial settings
+                _randomPasswordGenerator = new RandomPasswordGenerator();
+            } else {
+                _randomPasswordGenerator = RandomPasswordGenerator.configureFromPassword(oldPassword);
+            }
+        } else {
+            _randomPasswordGenerator = null;
+        }
         setup();
     }
 
@@ -131,6 +145,7 @@ public class PasswordEntryDialog extends JDialog
         getRootPane().setDefaultButton(_okButton);
 
         updateOKButtonState();
+        updateEditFieldComplexityFields(new char[0]);
 
         // Auto-size based on components
         pack();
@@ -141,8 +156,10 @@ public class PasswordEntryDialog extends JDialog
         JPanel panel = new JPanel(gridbag);
         GridBagConstraints c = new GridBagConstraints();
 
+        // Column 1
         c.weightx = 0.0;
         c.weighty = 0.0;
+        c.gridwidth = 1;
         c.fill = GridBagConstraints.NONE;
         c.anchor = GridBagConstraints.WEST;
         c.gridx = 0;
@@ -162,34 +179,60 @@ public class PasswordEntryDialog extends JDialog
             label = new JLabel("Re-enter again:");
             gridbag.setConstraints(label, c);
             panel.add(label);
-
-            c.gridy = 0;
         }
 
+        c.gridy++;
+        label = new JLabel("Alphabet size:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+
+        c.gridy++;
+        label = new JLabel("Bit complexity:");
+        gridbag.setConstraints(label, c);
+        panel.add(label);
+
+        // Column 2
+        c.gridy = 0;
         c.gridx++;
         c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.WEST;
         c.weightx = 1.0;
         c.weighty = 1.0;
+        c.gridwidth = 1;
         c.insets = new Insets(0, 2, 0, 2);
         _passwordField1 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
-        _passwordField1.getDocument().addDocumentListener(this);
+        _passwordField1.getDocument().addDocumentListener(new PasswordFieldDocumentListener(_passwordField1));
         gridbag.setConstraints(_passwordField1, c);
         panel.add(_passwordField1);
 
         if (_multipleEntry) {
             c.gridy++;
             _passwordField2 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
-            _passwordField2.getDocument().addDocumentListener(this);
+            _passwordField2.getDocument().addDocumentListener(new PasswordFieldDocumentListener(_passwordField2));
             gridbag.setConstraints(_passwordField2, c);
             panel.add(_passwordField2);
 
             c.gridy++;
             _passwordField3 = new JPasswordField(PASSWORD_FIELD_COLUMNS);
-            _passwordField3.getDocument().addDocumentListener(this);
+            _passwordField3.getDocument().addDocumentListener(new PasswordFieldDocumentListener(_passwordField3));
             gridbag.setConstraints(_passwordField3, c);
             panel.add(_passwordField3);
         }
 
+        c.gridwidth = 2;
+        c.fill = GridBagConstraints.NONE;
+
+        c.gridy++;
+        _effectiveAlphabetSizeField = new JLabel(" ");
+        gridbag.setConstraints(_effectiveAlphabetSizeField, c);
+        panel.add(_effectiveAlphabetSizeField);
+
+        c.gridy++;
+        _effectiveBitComplexityField = new JLabel(" ");
+        gridbag.setConstraints(_effectiveBitComplexityField, c);
+        panel.add(_effectiveBitComplexityField);
+
+        // Column 3
         c.gridx++;
         c.gridy = 0;
         c.anchor = GridBagConstraints.CENTER;
@@ -197,6 +240,7 @@ public class PasswordEntryDialog extends JDialog
         c.weightx = 0.0;
         c.weighty = 0.0;
         c.gridheight = 3;
+        c.gridwidth = 1;
         c.insets = new Insets(0, 0, 0, 0);
         _showOrHidePasswordsButton = makeButton(panel, SHOW_PASSWORDS_BUTTON_TEXT, KeyEvent.VK_H,
                 ButtonAction.SHOW_HIDE_PASSWORDS);
@@ -225,8 +269,6 @@ public class PasswordEntryDialog extends JDialog
         gridbag.setConstraints(label, c);
         panel.add(label);
         c.gridy++;
-
-        c.fill = GridBagConstraints.NONE;
 
         c.gridwidth = 1;
         c.anchor = GridBagConstraints.WEST;
@@ -283,6 +325,7 @@ public class PasswordEntryDialog extends JDialog
         c.gridy = 0;
         c.gridx++;
         c.gridwidth = 1;
+        c.weighty = 1.0;
         c.weightx = 1.0;
 
         c.gridy++;
@@ -333,13 +376,13 @@ public class PasswordEntryDialog extends JDialog
         c.gridy++;
 
         c.anchor = GridBagConstraints.WEST;
-        _generatorAlphabetSizeField = new JLabel();
+        _generatorAlphabetSizeField = new JLabel(" ");
         gridbag.setConstraints(_generatorAlphabetSizeField, c);
         panel.add(_generatorAlphabetSizeField);
         c.gridy++;
 
         c.anchor = GridBagConstraints.WEST;
-        _generatorBitComplexityField = new JLabel();
+        _generatorBitComplexityField = new JLabel(" ");
         gridbag.setConstraints(_generatorBitComplexityField, c);
         panel.add(_generatorBitComplexityField);
         c.gridy++;
@@ -370,23 +413,34 @@ public class PasswordEntryDialog extends JDialog
         }
     }
 
-    /**
-     * DocumentListener implementation for password fields
-     */
-    public void changedUpdate(DocumentEvent e) {}
+    private class PasswordFieldDocumentListener implements DocumentListener {
 
-    /**
-     * DocumentListener implementation for password fields
-     */
-    public void insertUpdate(DocumentEvent e) {
-        updateOKButtonState();
-    }
+        private final JPasswordField _owner;
 
-    /**
-     * DocumentListener implementation for password fields
-     */
-    public void removeUpdate(DocumentEvent e) {
-        updateOKButtonState();
+        public PasswordFieldDocumentListener(final JPasswordField owner) {
+            _owner = owner;
+        }
+
+        /**
+         * DocumentListener implementation for password fields
+         */
+        public void changedUpdate(DocumentEvent e) {}
+
+        /**
+         * DocumentListener implementation for password fields
+         */
+        public void insertUpdate(DocumentEvent e) {
+            updateOKButtonState();
+            updateEditFieldComplexityFields(_owner.getPassword());
+        }
+
+        /**
+         * DocumentListener implementation for password fields
+         */
+        public void removeUpdate(DocumentEvent e) {
+            updateOKButtonState();
+            updateEditFieldComplexityFields(_owner.getPassword());
+        }
     }
 
     /**
@@ -405,6 +459,16 @@ public class PasswordEntryDialog extends JDialog
         int alphabetSize = _randomPasswordGenerator.getAlphabetSize();
         _generatorAlphabetSizeField.setText(Integer.toString(alphabetSize));
         _generatePasswordButton.setEnabled(alphabetSize > 0);
+    }
+
+    private void updateEditFieldComplexityFields(char[] password) {
+        try {
+            RandomPasswordGenerator configured = RandomPasswordGenerator.configureFromPassword(password);
+            _effectiveAlphabetSizeField.setText(Integer.toString(configured.getAlphabetSize()));
+            _effectiveBitComplexityField.setText(Integer.toString(configured.getBitComplexity()));
+        } finally {
+            Arrays.fill(password, (char) 0);
+        }
     }
 
     private int getSpinnerIntValue(JSpinner spinner) {
@@ -426,6 +490,7 @@ public class PasswordEntryDialog extends JDialog
                 _passwordField2.setText(passwordString);
                 _passwordField3.setText(passwordString);
             }
+            updateEditFieldComplexityFields(password);
         } finally {
             Arrays.fill(password, (char) 0);
         }
@@ -446,16 +511,11 @@ public class PasswordEntryDialog extends JDialog
             return; // always enabled
         }
         // Just check that at least one field is non-empty (confirmMatch will interrupt OK if they they don't match)
-        char[] p1 = _passwordField1.getPassword();
-        char[] p2 = (_multipleEntry ? _passwordField2.getPassword() : new char[0]);
-        char[] p3 = (_multipleEntry ? _passwordField3.getPassword() : new char[0]);
-        try {
-            _okButton.setEnabled(p1.length != 0 || p2.length != 0 || p3.length != 0);
-        } finally {
-            Arrays.fill(p1, (char) 0);
-            Arrays.fill(p2, (char) 0);
-            Arrays.fill(p3, (char) 0);
-        }
+        int length1 = _passwordField1.getDocument().getLength();
+        int length2 = (_multipleEntry ? _passwordField2.getDocument().getLength() : 0);
+        int length3 = (_multipleEntry ? _passwordField3.getDocument().getLength() : 0);
+
+        _okButton.setEnabled(length1 > 0 || length2 > 0 || length3 > 0);
     }
 
     private void setPasswordPlaintextVisible(boolean visible) {

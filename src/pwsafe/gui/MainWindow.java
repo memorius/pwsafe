@@ -839,8 +839,8 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private void unlockStore(PasswordStore store) {
         assert (store.isLocked());
-        // Prompt for store password
-        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter store unlock password", false, false, false);
+        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter store unlock password",
+                false, false, false, null);
         char[] password = dialog.showDialog();
         if (password == null) { // cancelled
             return;
@@ -885,8 +885,8 @@ public class MainWindow extends JFrame implements ActionListener {
         PasswordStore store = (PasswordStore) _storeList.getSelectedValue();
         assert (store != null);
         assert (!store.isLocked());
-        // Prompt for store password
-        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter new store password", true, false, false);
+        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter new store password",
+                true, false, false, null);
         char[] password = dialog.showDialog();
         if (password == null) { // cancelled
             return;
@@ -902,8 +902,8 @@ public class MainWindow extends JFrame implements ActionListener {
     private void changeSelectedEntryPassword() {
         PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
         assert (entry != null);
-        // Prompt for store password
-        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter new entry password", true, true, true);
+        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Enter new entry password",
+                true, true, true, _entryPasswordField.getPassword());
         char[] password = dialog.showDialog();
         if (password == null) { // cancelled
             return;
