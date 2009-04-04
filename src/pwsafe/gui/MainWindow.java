@@ -20,6 +20,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import javax.swing.BorderFactory;
@@ -40,6 +41,7 @@ import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.text.BadLocationException;
 
 import pwsafe.DatastoreFileException;
 import pwsafe.DecryptionException;
@@ -85,6 +87,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private static final String DISCARD_ENTRY_BUTTON_TEXT = "Discard entry changes";
     // Entry editing
     private static final String COPY_ENTRY_USERID_BUTTON_TEXT = "Copy";
+    private static final String ADDITIONAL_INFO_PASSWORD_GENERATOR_BUTTON_TEXT = "Generator";
     private static final String SHOW_ENTRY_PASSWORD_BUTTON_TEXT = "Show";
     private static final String HIDE_ENTRY_PASSWORD_BUTTON_TEXT = "Hide";
     private static final String COPY_ENTRY_PASSWORD_BUTTON_TEXT = "Copy";
@@ -115,6 +118,7 @@ public class MainWindow extends JFrame implements ActionListener {
         SAVE_ENTRY,
         DISCARD_ENTRY,
         COPY_ENTRY_USERID,
+        ADDITIONAL_INFO_PASSWORD_GENERATOR,
         SHOW_OR_HIDE_ENTRY_PASSWORD,
         COPY_ENTRY_PASSWORD,
         CHANGE_ENTRY_PASSWORD,
@@ -156,6 +160,7 @@ public class MainWindow extends JFrame implements ActionListener {
     private JPasswordField _entryPasswordField;
     private JLabel _entryPasswordLastChangedField;
     private JTextArea _entryAdditionalInfoField;
+    private JButton _additionalInfoPasswordGeneratorButton;
     private JLabel _entryAdditionalInfoLastChangedField;
     private JButton _changeEntryPasswordButton;
     private JButton _showOrHideEntryPasswordButton;
@@ -386,9 +391,9 @@ public class MainWindow extends JFrame implements ActionListener {
         c.insets = textFieldInsets;
         c.anchor = GridBagConstraints.SOUTH;
         c.fill = GridBagConstraints.HORIZONTAL;
-        Component passwordFieldButtons = createPasswordStoreEntryPasswordFieldAndButtons();
-        gridbag.setConstraints(passwordFieldButtons, c);
-        panel.add(passwordFieldButtons);
+        Component passwordFieldAndButtons = createPasswordStoreEntryPasswordFieldAndButtons();
+        gridbag.setConstraints(passwordFieldAndButtons, c);
+        panel.add(passwordFieldAndButtons);
         c.gridy++;
 
         c.gridwidth = 1;
@@ -407,15 +412,11 @@ public class MainWindow extends JFrame implements ActionListener {
         c.weighty = 1.0;
         c.ipadx = 0;
         c.insets = textFieldInsets;
-        c.anchor = GridBagConstraints.SOUTHWEST;
+        c.anchor = GridBagConstraints.SOUTH;
         c.fill = GridBagConstraints.BOTH;
-        // Field created above, just add to layout
-        _entryAdditionalInfoField.setLineWrap(false);
-        _entryAdditionalInfoField.setRows(4);
-        // _entryAdditionalInfoField.setWrapStyleWord(true); // true - break on whitespace only
-        JScrollPane scrollPane = new JScrollPane(_entryAdditionalInfoField);
-        gridbag.setConstraints(scrollPane, c);
-        panel.add(scrollPane);
+        Component additionalInfoAndButtons = createPasswordStoreEntryAdditionInfoFieldAndButtons();
+        gridbag.setConstraints(additionalInfoAndButtons, c);
+        panel.add(additionalInfoAndButtons);
         c.gridy++;
 
         c.gridwidth = 1;
@@ -565,6 +566,45 @@ public class MainWindow extends JFrame implements ActionListener {
         return panel;
     }
 
+    private Component createPasswordStoreEntryAdditionInfoFieldAndButtons() {
+        GridBagLayout gridbag = new GridBagLayout();
+        JPanel panel = new JPanel(gridbag);
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.weighty = 0.0;
+        c.gridx = 0;
+        c.gridy = 0;
+
+        c.weightx = 1.0;
+        c.anchor = GridBagConstraints.SOUTHWEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        // Already created elsewhere (so we could attach label to it for mnemonic)
+        _entryAdditionalInfoField.setLineWrap(false);
+        _entryAdditionalInfoField.setRows(4);
+        // _entryAdditionalInfoField.setWrapStyleWord(true); // true - break on whitespace only
+        JScrollPane scrollPane = new JScrollPane(_entryAdditionalInfoField);
+        gridbag.setConstraints(scrollPane, c);
+        panel.add(scrollPane);
+        c.gridx++;
+
+        c.weightx = 0.0;
+        c.anchor = GridBagConstraints.CENTER;
+        c.fill = GridBagConstraints.NONE;
+
+        _additionalInfoPasswordGeneratorButton = makeButton(panel, ADDITIONAL_INFO_PASSWORD_GENERATOR_BUTTON_TEXT,
+                -1 /*KeyEvent.VK_C*/, ButtonAction.ADDITIONAL_INFO_PASSWORD_GENERATOR);
+        gridbag.setConstraints(_additionalInfoPasswordGeneratorButton, c);
+        c.gridx++;
+
+        Insets buttonMargin;
+        buttonMargin = _additionalInfoPasswordGeneratorButton.getMargin();
+        buttonMargin.left = Math.max(buttonMargin.left - 8, 0);
+        buttonMargin.right = buttonMargin.left;
+        _additionalInfoPasswordGeneratorButton.setMargin(buttonMargin);
+
+        return panel;
+    }
+
     /**
      * List of attachments in the currently-selected store entry plus control buttons
      */
@@ -644,6 +684,7 @@ public class MainWindow extends JFrame implements ActionListener {
         _entryUserIDField.setEditable(enabled);
         _copyEntryUserIDButton.setEnabled(enabled);
         _entryAdditionalInfoField.setEditable(enabled);
+        _additionalInfoPasswordGeneratorButton.setEnabled(enabled);
         _saveEntryButton.setEnabled(enabled);
         _discardEntryButton.setEnabled(enabled);
         _changeEntryPasswordButton.setEnabled(enabled);
@@ -870,8 +911,7 @@ public class MainWindow extends JFrame implements ActionListener {
             store.lock();
             // Store is now responsible for the key - keeps it for locking again later
         } catch (EncryptionException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Encryption failed:\n" + e.toString());
+            JOptionPane.showMessageDialog(this, "Encryption failed:\n" + e.toString());
             return;
         }
         // Successfully locked
@@ -908,8 +948,12 @@ public class MainWindow extends JFrame implements ActionListener {
         if (password == null) { // cancelled
             return;
         }
-        // OK - note that value could still be an empty string, but we allow this to clear existing password
-        _entryPasswordField.setText(new String(password));
+        try {
+            // OK - note that value could still be an empty string, but we allow this to clear existing password
+            _entryPasswordField.setText(new String(password));
+        } finally {
+            Arrays.fill(password, (char) 0);
+        }
     }
 
     private void renameSelectedStore() {
@@ -964,8 +1008,7 @@ public class MainWindow extends JFrame implements ActionListener {
             StringSelection ss = new StringSelection(_entryUserIDField.getText());
             cb.setContents(ss, ss);
         } catch (IllegalStateException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Failed to access clipboard:\n" + e.toString());
+            JOptionPane.showMessageDialog(this, "Failed to access clipboard:\n" + e.toString());
             return;
         }
     }
@@ -982,9 +1025,28 @@ public class MainWindow extends JFrame implements ActionListener {
             // to other apps in the clipboard
             cb.setContents(ss, ss);
         } catch (IllegalStateException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Failed to access clipboard:\n" + e.toString());
+            JOptionPane.showMessageDialog(this, "Failed to access clipboard:\n" + e.toString());
             return;
+        }
+    }
+
+    private void additionalInfoPasswordGenerator() {
+        PasswordStoreEntry entry = (PasswordStoreEntry) _entryList.getSelectedValue();
+        assert (entry != null);
+        PasswordEntryDialog dialog = new PasswordEntryDialog(this, "Password generator", false, true, true, null);
+        char[] password = dialog.showDialog();
+        if (password == null) { // cancelled
+            return;
+        }
+        try {
+            // Insert into the field at current caret position
+            _entryAdditionalInfoField.getDocument().insertString(
+                    _entryAdditionalInfoField.getCaret().getDot(), new String(password), null);
+        } catch (BadLocationException e) {
+            JOptionPane.showMessageDialog(this, "Error inserting document string:\n" + e.toString());
+            return;
+        } finally {
+            Arrays.fill(password, (char) 0);
         }
     }
 
@@ -1264,6 +1326,9 @@ public class MainWindow extends JFrame implements ActionListener {
             break;
         case COPY_ENTRY_USERID:
             copySelectedEntryUserID();
+            break;
+        case ADDITIONAL_INFO_PASSWORD_GENERATOR:
+            additionalInfoPasswordGenerator();
             break;
         case SHOW_OR_HIDE_ENTRY_PASSWORD:
             setPasswordStoreEntryPasswordPlaintextVisible(!_entryPasswordPlaintextVisible);

@@ -239,7 +239,7 @@ public class PasswordEntryDialog extends JDialog
         c.fill = GridBagConstraints.NONE;
         c.weightx = 0.0;
         c.weighty = 0.0;
-        c.gridheight = 3;
+        c.gridheight = (_multipleEntry ? 3 : 1);
         c.gridwidth = 1;
         c.insets = new Insets(0, 0, 0, 0);
         _showOrHidePasswordsButton = makeButton(panel, SHOW_PASSWORDS_BUTTON_TEXT, KeyEvent.VK_H,
