@@ -264,7 +264,7 @@ public final class CryptoUtils {
 
     /**
      * Hash the password with the specified salt, then re-hash continuously until the specified time has elapsed,
-     * returning the resulting key and the actualy iteration count used.
+     * returning the resulting key and the actual iteration count used.
      * Used during encryption.
      * <p>
      * Hashing the password many times (and using a salt) gives some degree of protection against use of
@@ -310,9 +310,8 @@ public final class CryptoUtils {
 
         Digest digest = new SHA256Digest();
         byte[] output = new byte[digest.getDigestSize()];
-        byte[] input = new byte[digest.getDigestSize()];
 
-        // First iteration - hash with salt, into output
+        // First iteration - hash salt and password, into output
         digest.update(salt, 0, salt.length);
         digest.update(passwordBytes, 0, passwordBytes.length);
         // Note that doFinal also resets the digest's internal state, like constructing a new one
@@ -322,12 +321,13 @@ public final class CryptoUtils {
         // Remaining iterations - re-hash output
         if (hashIterations > 0) {
             // Fixed iteration count (decryption)
-            for (int i = 1; i < hashIterations; i++) { // 0th iteration was the one with the salt
-                // input this time is the output from the last iteration; then reuse (overwrite) output array
-                byte[] temp = input;
-                input = output;
-                output = temp;
-                digest.update(input, 0, input.length);
+            for (int i = 1; i < hashIterations; i++) { // 0th iteration was the initial one above
+                // First mix in the salt and password again
+                digest.update(salt, 0, salt.length);
+                digest.update(passwordBytes, 0, passwordBytes.length);
+                // Now mix in the output from the last iteration
+                digest.update(output, 0, output.length);
+                // Reuse (overwrite) output array
                 outputLength = digest.doFinal(output, 0);
                 assert (outputLength == output.length);
             }
@@ -335,15 +335,16 @@ public final class CryptoUtils {
         } else {
             // Minimum iteration time (encryption)
             final int iterationIncrement = 100;
-            int actualHashIterations = 1; // 0th iteration was the one with the salt
+            int actualHashIterations = 1; // 0th iteration was the initial one above
             final long stopTime = System.currentTimeMillis() + hashIterationTimeMillis;
             do {
                 for (int i = 0; i < iterationIncrement; i++) {
-                    // input this time is the output from the last iteration; then reuse (overwrite) output array
-                    byte[] temp = input;
-                    input = output;
-                    output = temp;
-                    digest.update(input, 0, input.length);
+                    // First mix in the salt and password again
+                    digest.update(salt, 0, salt.length);
+                    digest.update(passwordBytes, 0, passwordBytes.length);
+                    // Now mix in the output from the last iteration
+                    digest.update(output, 0, output.length);
+                    // Reuse (overwrite) output array
                     outputLength = digest.doFinal(output, 0);
                     assert (outputLength == output.length);
                 }
