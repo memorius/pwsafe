@@ -20,6 +20,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -478,6 +479,24 @@ public class MainWindow extends JFrame implements ActionListener {
         gridbag.setConstraints(_entryAdditionalInfoLastChangedField, c);
         panel.add(_entryAdditionalInfoLastChangedField);
 
+        /*
+        List<Component> focusOrder = new ArrayList<Component>();
+        focusOrder.add(_entryNameField);
+        focusOrder.add(_entryUserIDField);
+        focusOrder.add(_copyEntryUserIDButton);
+        focusOrder.add(_showOrHideEntryPasswordButton);
+        focusOrder.add(_copyEntryPasswordButton);
+        focusOrder.add(_changeEntryPasswordButton);
+        focusOrder.add(_entryAdditionalInfoField);
+        focusOrder.add(_additionalInfoPasswordGeneratorButton);
+        focusOrder.add(_addAttachmentButton);
+        focusOrder.add(_removeAttachmentButton);
+        focusOrder.add(_viewAttachmentButton);
+        focusOrder.add(_attachmentList);
+        panel.setFocusTraversalPolicyProvider(true);
+        panel.setFocusTraversalPolicy(new FixedFocusTraversalPolicy(focusOrder));
+        */
+
         return panel;
     }
 
@@ -530,6 +549,7 @@ public class MainWindow extends JFrame implements ActionListener {
         c.fill = GridBagConstraints.HORIZONTAL;
         _entryPasswordField = new JPasswordField(PASSWORD_FIELD_COLUMNS);
         _entryPasswordField.setEditable(false);
+        _entryPasswordField.setFocusable(false);
         gridbag.setConstraints(_entryPasswordField, c);
         panel.add(_entryPasswordField);
         c.gridx++;
@@ -650,6 +670,7 @@ public class MainWindow extends JFrame implements ActionListener {
         // _attachmentList.setPrototypeCellValue("filename.txt");
         _attachmentList.setVisibleRowCount(3);
         JScrollPane pane = new JScrollPane(_attachmentList);
+        // pane.setFocusable(false);
         return pane;
     }
 
@@ -681,22 +702,36 @@ public class MainWindow extends JFrame implements ActionListener {
 
     private void setPasswordStoreEntryEditFieldsEnabled(boolean enabled) {
         _entryNameField.setEditable(enabled);
+        _entryNameField.setFocusable(enabled);
         _entryUserIDField.setEditable(enabled);
+        _entryUserIDField.setFocusable(enabled);
         _copyEntryUserIDButton.setEnabled(enabled);
+        _copyEntryUserIDButton.setFocusable(enabled);
         _entryAdditionalInfoField.setEditable(enabled);
+        _entryAdditionalInfoField.setFocusable(enabled);
         _additionalInfoPasswordGeneratorButton.setEnabled(enabled);
+        _additionalInfoPasswordGeneratorButton.setFocusable(enabled);
         _saveEntryButton.setEnabled(enabled);
+        _saveEntryButton.setFocusable(enabled);
         _discardEntryButton.setEnabled(enabled);
+        _discardEntryButton.setFocusable(enabled);
         _changeEntryPasswordButton.setEnabled(enabled);
+        _changeEntryPasswordButton.setFocusable(enabled);
         _showOrHideEntryPasswordButton.setEnabled(enabled);
+        _showOrHideEntryPasswordButton.setFocusable(enabled);
         _copyEntryPasswordButton.setEnabled(enabled);
+        _copyEntryPasswordButton.setFocusable(enabled);
     }
 
     private void setAttachmentListButtonsEnabled(boolean enabled) {
         _attachmentList.setEnabled(enabled);
+        _attachmentList.setFocusable(enabled);
         _addAttachmentButton.setEnabled(enabled);
+        _addAttachmentButton.setFocusable(enabled);
         _removeAttachmentButton.setEnabled(enabled);
+        _removeAttachmentButton.setFocusable(enabled);
         _viewAttachmentButton.setEnabled(enabled);
+        _viewAttachmentButton.setFocusable(enabled);
     }
 
     private void setPasswordStoreEntryPasswordPlaintextVisible(boolean visible) {
@@ -1159,9 +1194,13 @@ public class MainWindow extends JFrame implements ActionListener {
     private void enableAttachmentListAndButtons() {
         boolean anySelected = (_attachmentList.getSelectedValue() != null);
         _viewAttachmentButton.setEnabled(anySelected);
+        _viewAttachmentButton.setFocusable(anySelected);
         _removeAttachmentButton.setEnabled(anySelected);
+        _removeAttachmentButton.setFocusable(anySelected);
         _addAttachmentButton.setEnabled(true);
+        _addAttachmentButton.setFocusable(true);
         _attachmentList.setEnabled(true);
+        _attachmentList.setFocusable(true);
     }
 
     private void setPasswordStoreEntryListButtonsEnabled(boolean enabled) {

@@ -17,7 +17,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -248,6 +250,17 @@ public class PasswordEntryDialog extends JDialog
         gridbag.setConstraints(_showOrHidePasswordsButton, c);
 
         panel.setBorder(BorderFactory.createLineBorder(Color.black));
+
+        List<Component> focusOrder = new ArrayList<Component>();
+        focusOrder.add(_passwordField1);
+        if (_multipleEntry) {
+            focusOrder.add(_passwordField2);
+            focusOrder.add(_passwordField3);
+        }
+        focusOrder.add(_showOrHidePasswordsButton);
+        panel.setFocusTraversalPolicyProvider(true);
+        panel.setFocusTraversalPolicy(new FixedFocusTraversalPolicy(focusOrder));
+
         return panel;
     }
 
